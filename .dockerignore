@@ -1,0 +1,6 @@
+.git
+target
+analysis_*.txt
+.idea
+.vscode
+*.log
