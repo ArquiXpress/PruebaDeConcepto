@@ -1,4 +1,32 @@
 services:
+  db-router:
+    image: alpine:3.20
+    container_name: arquixpress-db-router
+    command: ["sh", "/db-router.sh"]
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./ops/postgres/db-router.sh:/db-router.sh:ro
+      - db-router-state:/state
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-replica:
+        condition: service_started
+
+  db-arbiter:
+    image: alpine:3.20
+    container_name: arquixpress-db-arbiter
+    command: ["sh", "/db-arbiter.sh"]
+    volumes:
+      - ./ops/postgres/db-arbiter.sh:/db-arbiter.sh:ro
+      - db-router-state:/state
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-replica:
+        condition: service_started
+
   postgres:
     image: postgres:16-alpine
     container_name: arquixpress-postgres
@@ -50,7 +78,7 @@ services:
     build: .
     container_name: arquixpress-api-1
     environment: &api_env
-      DB_URL: jdbc:postgresql://postgres:5432/arquixpress
+      DB_URL: jdbc:postgresql://db-router:5432/arquixpress
       DB_USERNAME: arquixpress
       DB_PASSWORD: arquixpress
       READ_REPLICA_ENABLED: "true"
@@ -64,8 +92,8 @@ services:
     expose:
       - "8080"
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-router:
+        condition: service_started
 
   api-2:
     build: .
@@ -74,8 +102,8 @@ services:
     expose:
       - "8080"
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-router:
+        condition: service_started
       postgres-replica:
         condition: service_started
 
@@ -91,5 +119,6 @@ services:
       - api-2
 
 volumes:
+  db-router-state:
   postgres-data:
   postgres-replica-data:
