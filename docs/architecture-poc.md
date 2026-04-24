@@ -53,10 +53,24 @@ Decision formal: `docs/adr/ADR-006-postgresql.md`.
 
 - `identity`: usuario actual mockeado por headers y control RBAC basico.
 - `catalog`: busqueda y detalle de productos con cache.
+- `ui-demo`: mockup estatico para catalogo, carrito, favoritos, usuario e inventario antes del pago.
 - `orders`: checkout, pedidos, lineas y estados logisticos.
 - `payments`: transacciones con idempotencia y pasarela mock parametrizable.
 - `notifications`: outbox para que notificaciones no bloqueen checkout.
 - `promotions`: endpoint minimo para validar permiso administrativo.
+
+## Reutilizacion del esqueleto Moravia
+
+El directorio `Moravia-Hotel-Angular/proyecto` contiene la base visual y estructural que se quiere reutilizar como plantilla para ArquiXpress. El port debe respetar el SAD y cambiar el vocabulario de dominio:
+
+- `room` -> `product` o `publication`;
+- `reserva` -> `cart`, `checkout` y `order`;
+- `cliente` -> `buyer`;
+- `usuario` -> `admin`, `seller` o `operator`;
+- `cuenta` -> `account` o perfil de usuario;
+- `servicio` -> beneficio, add-on o servicio complementario.
+
+La intencion es preservar la forma del aplicativo sin arrastrar semantica hotelera que ya no aplica.
 
 ## Endpoints relevantes
 
@@ -70,6 +84,25 @@ Decision formal: `docs/adr/ADR-006-postgresql.md`.
 | `PATCH /api/logistics/orders/{id}/shipment` | ASR-17 | Actualiza estado logistico con roles validos |
 | `POST /api/admin/promotions` | ASR-07, ASR-18 | Mock de creacion de campana restringida a admin |
 | `/actuator/health`, `/actuator/metrics`, `/actuator/prometheus` | ASR-10, ASR-14 | Salud y metricas |
+
+## Alcance funcional pedido por el profesor
+
+Implementado en la demo actual:
+
+- catalogo;
+- carrito;
+- favoritos;
+- usuario mockeado;
+- inventario;
+- simulacion de pago.
+
+Excluido por instruccion explicita:
+
+- orden formal;
+- envio;
+- promociones funcionales;
+- pago externo real;
+- publicidad.
 
 ## Que indicaria que no vale la pena continuar asi
 

@@ -1,0 +1,134 @@
+<main class="home">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Al alcance de todos</p>
+      <h1>Compra, vende y descubre sin complicarte</h1>
+      <p class="lead">Un marketplace modular con inventario real, registro propio y checkout separado.</p>
+      <div class="category-pills">
+        <a routerLink="/catalogo" [queryParams]="{ category: 'tecnologia' }">Tecnología</a>
+        <a routerLink="/catalogo" [queryParams]="{ category: 'hogar' }">Hogar</a>
+        <a routerLink="/catalogo" [queryParams]="{ category: 'gaming' }">Gaming</a>
+        <a routerLink="/catalogo" [queryParams]="{ category: 'moda' }">Moda</a>
+        <a routerLink="/catalogo" [queryParams]="{ category: 'telefonia' }">Telefonía</a>
+      </div>
+      <div class="hero-actions">
+        <a class="solid" routerLink="/login">Entrar</a>
+        <a class="ghost" routerLink="/registro">Crear cuenta</a>
+        <a class="ghost" routerLink="/catalogo">Ver catálogo</a>
+        <button type="button" class="ghost" (click)="toggleCart()">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 8h-11z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="20" r="1.4" fill="currentColor"/><circle cx="18" cy="20" r="1.4" fill="currentColor"/><path d="M3 3h2l2 11h11" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+          </span>
+          <span>Carrito</span>
+        </button>
+      </div>
+    </div>
+
+    <aside class="hero-panel">
+      <div class="promo-card">
+        <span class="badge">Nuevo</span>
+        <h2>Todo fluye en un solo lugar</h2>
+        <p>Catálogo curado con productos, imágenes y stock real.</p>
+      </div>
+      <div class="session-card">
+        <div class="avatar">{{ (session.currentUser()?.displayName || 'G') | slice:0:1 }}</div>
+        <div>
+          <p class="muted">Sesión</p>
+          <strong>{{ session.currentUser()?.displayName || 'Invitado' }}</strong>
+          <p class="muted">{{ session.currentUser()?.roles?.join(', ') || 'Sin rol' }}</p>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Destacados</h2>
+      <a routerLink="/catalogo">Ver todos</a>
+    </div>
+
+    <div class="carousel-shell" *ngIf="featured().length; else loadingState">
+      <button type="button" class="carousel-nav" (click)="previousFeatured()" aria-label="Anterior">
+        <svg viewBox="0 0 24 24"><path d="M15 6 9 12l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="product-grid carousel-grid">
+        <article class="product-card" *ngFor="let product of featuredWindow()">
+        <img class="product-image" [src]="product.imageUrl" [alt]="product.title" />
+        <div class="tag">{{ product.category }}</div>
+        <h3>{{ product.title }}</h3>
+        <p>{{ product.description }}</p>
+        <div class="meta">
+          <strong>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          <span>Stock {{ product.stockAvailable }}</span>
+        </div>
+        <button type="button" class="add-btn" (click)="addToCart(product)">Agregar</button>
+      </article>
+      </div>
+      <button type="button" class="carousel-nav" (click)="nextFeatured()" aria-label="Siguiente">
+        <svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
+    <ng-template #loadingState>
+      <div class="empty">{{ loading ? 'Cargando catálogo...' : 'Sin productos' }}</div>
+    </ng-template>
+  </section>
+
+  <section class="section" *ngIf="page()?.content?.length">
+    <div class="section-head">
+      <h2>Explorar por categoría</h2>
+      <a routerLink="/catalogo">Ir al catálogo</a>
+    </div>
+
+    <div class="category-blocks">
+      <article class="category-block" *ngFor="let category of categories()">
+        <div class="section-head compact">
+          <h3>{{ category }}</h3>
+          <a routerLink="/catalogo" [queryParams]="{ category }">Filtrar</a>
+        </div>
+        <div class="category-products">
+          <article class="product-card mini-card" *ngFor="let product of productsByCategory(category) | slice:0:4">
+            <img class="mini-image" [src]="product.imageUrl" [alt]="product.title" />
+            <div>
+              <strong>{{ product.title }}</strong>
+              <p>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+            </div>
+          </article>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <div class="cart-modal-backdrop" *ngIf="cartOpen" (click)="toggleCart()"></div>
+  <aside class="cart-modal" *ngIf="cartOpen">
+    <header>
+      <strong>Carrito</strong>
+      <button type="button" class="icon-btn" (click)="toggleCart()" aria-label="Cerrar carrito">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      </button>
+    </header>
+    <div class="cart-items" *ngIf="cart.items().length; else emptyCart">
+      <div class="cart-item" *ngFor="let item of cart.items()">
+        <img class="thumb" [src]="productById(item.productId)?.imageUrl" [alt]="productById(item.productId)?.title || item.productId" />
+        <div class="cart-copy">
+          <strong>{{ productById(item.productId)?.title || item.productId }}</strong>
+          <span>{{ item.quantity }} unidades</span>
+          <small>{{ (productById(item.productId)?.price || 0) | currency:'COP':'symbol-narrow':'1.0-0' }}</small>
+        </div>
+        <button type="button" class="icon-btn" (click)="cart.remove(item.productId)" aria-label="Quitar producto">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+      </div>
+    </div>
+    <ng-template #emptyCart>
+      <p class="muted">Tu carrito está vacío.</p>
+    </ng-template>
+    <footer>
+      <div class="subtotal">
+        <span>Subtotal</span>
+        <strong>{{ subtotal() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+      </div>
+      <button type="button" class="solid full" (click)="checkout()">Ir al checkout</button>
+    </footer>
+  </aside>
+</main>

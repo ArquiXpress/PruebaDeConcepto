@@ -1,12 +1,31 @@
-# Frontend Angular - frontera de POC
+# Frontend ArquiXpress
 
-El SAD define una SPA Angular con routing, guards, HTTP interceptor, state management y clientes HTTP.
+SPA Angular para el marketplace ArquiXpress.
 
-Esta POC no implementa Angular todavia porque la primera validacion de viabilidad es de backend + base de datos bajo carga. La frontera esperada es:
+## Proposito
 
-- `HTTP Interceptor`: agrega token/JWT real o, en POC, headers `X-User-Id` y `X-Roles`.
-- `API Client Services`: consume `/api/products`, `/api/checkout`, `/api/orders`, `/api/admin/promotions`.
-- `Route Guards`: restringen paneles de comprador, vendedor, administrador y logistica.
-- `State Management`: mantiene sesion, carrito y resultados de busqueda.
+- consumir el backend modular en Spring Boot;
+- mostrar catalogo, carrito y checkout;
+- servir como base para el port completo del SAD;
+- mantener el dominio separado del proyecto hotelero Moravia.
 
-Cuando la API pase las pruebas de carga, el siguiente paso es generar el workspace Angular y conectar estos endpoints.
+## Desarrollo local
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+La app corre en `http://localhost:4200`.
+
+## Backend esperado
+
+El proxy de desarrollo redirige `/api` hacia `http://lb:8080`, que es el balanceador del entorno Docker.
+
+## Estado actual
+
+- catalogo inicial;
+- carrito en memoria/localStorage;
+- checkout contra backend;
+- selector de usuario demo con roles.

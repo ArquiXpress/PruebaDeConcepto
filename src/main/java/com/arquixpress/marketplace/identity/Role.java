@@ -4,5 +4,6 @@ public enum Role {
     CLIENT,
     SELLER,
     ADMIN,
-    LOGISTICS
+    LOGISTICS,
+    SUPERADMIN
 }

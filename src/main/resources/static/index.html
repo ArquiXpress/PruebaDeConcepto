@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ArquiXpress Marketplace</title>
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-mark" src="/assets/brand/logo.png" alt="ArquiXpress" />
+      <div>
+        <div class="brand-name">ArquiXpress</div>
+        <div class="brand-sub">Al alcance de todos</div>
+      </div>
+    </div>
+    <div class="search-shell">
+      <input id="queryInput" class="search-input" placeholder="Buscar productos, marcas o categorías" />
+      <button id="clearSearchBtn" class="btn-secondary">Limpiar</button>
+    </div>
+    <div class="session-card compact">
+      <label>Rol activo</label>
+      <select id="userSelect"></select>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">ArquiXpress Marketplace</p>
+        <h1>Catálogo visual y flujo por rol</h1>
+        <p class="lead">La página cambia según el rol activo. Cliente compra, vendedor administra stock y admin supervisa inventario y validaciones de prueba.</p>
+        <div class="feature-pills">
+          <span>Imágenes en catálogo</span>
+          <span>Paleta azul y blanca</span>
+          <span>Acciones guiadas por rol</span>
+        </div>
+      </div>
+      <div class="session-card hero-session">
+        <div class="session-meta" id="sessionMeta"></div>
+        <div class="role-quick" id="roleQuick"></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <div class="role-explainer" id="roleExplainer"></div>
+        <div class="panel-head">
+          <h2>Destacados</h2>
+          <div class="panel-head-note">Los productos más visibles para navegar rápido.</div>
+        </div>
+        <div id="featured" class="featured"></div>
+        <div class="panel-head catalog-head">
+          <h2>Catálogo</h2>
+          <div class="panel-head-note">Compra si eres cliente. Ajusta inventario si eres vendedor o admin.</div>
+        </div>
+        <div id="catalog" class="cards"></div>
+      </article>
+
+      <aside class="sidebar">
+        <article class="panel role-panel" id="clientPanel">
+          <h2>Cliente</h2>
+          <div class="panel-head-note">Favoritos, carrito y pago simulado.</div>
+          <div class="role-actions">
+            <button id="checkoutBtn" class="primary">Simular pago</button>
+            <div class="summary" id="cartSummary"></div>
+          </div>
+          <pre id="checkoutResult" class="result"></pre>
+        </article>
+        <article class="panel role-panel" id="favoritesPanel">
+          <h2>Favoritos</h2>
+          <div id="favorites" class="list"></div>
+        </article>
+        <article class="panel role-panel" id="cartPanel">
+          <h2>Carrito</h2>
+          <div id="cart" class="list"></div>
+        </article>
+        <article class="panel role-panel" id="sellerPanel">
+          <h2>Inventario y acciones</h2>
+          <div id="inventory" class="list"></div>
+        </article>
+      </aside>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

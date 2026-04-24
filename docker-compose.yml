@@ -81,10 +81,14 @@ services:
       DB_URL: jdbc:postgresql://db-router:5432/arquixpress
       DB_USERNAME: arquixpress
       DB_PASSWORD: arquixpress
-      READ_REPLICA_ENABLED: "true"
+      DB_DRIVER: org.postgresql.Driver
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_FLYWAY_DRIVER_CLASS_NAME: org.postgresql.Driver
+      READ_REPLICA_ENABLED: "false"
       READ_DB_URL: jdbc:postgresql://postgres-replica:5432/arquixpress
       READ_DB_USERNAME: arquixpress
       READ_DB_PASSWORD: arquixpress
+      READ_DB_DRIVER: org.postgresql.Driver
       PAYMENT_APPROVAL_RATE: "0.92"
       PAYMENT_TIMEOUT_RATE: "0.02"
       PAYMENT_MIN_LATENCY_MS: "30"
@@ -117,6 +121,18 @@ services:
     depends_on:
       - api-1
       - api-2
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: arquixpress-frontend
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - lb
 
 volumes:
   db-router-state:

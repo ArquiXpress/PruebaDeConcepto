@@ -1,0 +1,29 @@
+<main class="page">
+  <section class="panel">
+    <div class="panel-head">
+      <h1>Crear cuenta</h1>
+      <a routerLink="/login">Ya tengo cuenta</a>
+    </div>
+
+    <p class="muted">Regístrate para comprar, vender o administrar el marketplace.</p>
+
+    <div class="form">
+      <label>
+        Nombre visible
+        <input [(ngModel)]="displayName" type="text" />
+      </label>
+      <label>
+        Email
+        <input [(ngModel)]="email" type="email" />
+      </label>
+      <label>
+        Clave
+        <input [(ngModel)]="password" type="password" />
+      </label>
+      <button type="button" class="primary" (click)="submit()" [disabled]="loading">
+        {{ loading ? 'Creando...' : 'Registrarme' }}
+      </button>
+      <p class="error" *ngIf="error">{{ error }}</p>
+    </div>
+  </section>
+</main>

@@ -2,13 +2,28 @@
 
 POC de arquitectura para validar si el enfoque del SAD es viable antes de invertir en la implementacion completa.
 
+## Base reutilizada
+
+El repositorio incluye el esqueleto `Moravia-Hotel-Angular` como referencia estructural. La migracion no se hace por copia literal del dominio hotelero, sino por adaptacion al marketplace:
+
+- se conservan patrones de layout, guardas, formularios y servicios;
+- se renombraran las pantallas al lenguaje del SAD;
+- se documenta el mapeo en `docs/moravia-to-arquixpress-mapping.md`;
+- se mantiene la POC y su evidencia en `docs/` y `load/`.
+
 ## Decision base
 
 - Estilo: monolito modular con separacion por dominios (`catalog`, `orders`, `payments`, `notifications`, `identity`, `promotions`).
 - Backend: Spring Boot, alineado con la restriccion del SAD.
 - Base de datos: PostgreSQL en la POC, porque el diagrama fisico de despliegue adjunto usa PostgreSQL con replica. El SAD tambien menciona MySQL en otros puntos; esa inconsistencia queda documentada en `docs/architecture-poc.md`.
 - Integraciones externas: pasarela de pagos y notificaciones simuladas con adaptadores internos para controlar latencia/fallo durante pruebas.
-- Frontend: frontera Angular documentada, no implementada en esta iteracion.
+- Frontend: mockup navegable incluido en `src/main/resources/static` para cubrir catalogo, carrito, favoritos, usuario e inventario antes del pago.
+
+## Estado actual de la adaptacion visual
+
+- UI estatica de mercado ya disponible en `src/main/resources/static`.
+- El frontend Angular de `Moravia-Hotel-Angular/proyecto` sigue siendo la referencia para el port de componentes.
+- La migracion completa de componentes se debe hacer por fases para evitar mezclar nombres de hotel con nombres de marketplace.
 
 ## Ejecutar
 
@@ -17,6 +32,8 @@ docker compose up --build
 ```
 
 API: `http://localhost:8080`
+
+Mockup UI: `http://localhost:8080/`
 
 Health check:
 
@@ -52,4 +69,4 @@ Esta POC valida primero los riesgos de arquitectura mas caros:
 - notificaciones desacopladas por outbox;
 - RBAC minimo por rol.
 
-No valida todavia UI Angular, replica real de PostgreSQL, CDN/imagenes, autenticacion JWT real ni observabilidad completa con dashboards.
+No valida todavia Angular real, replica automatica completa de PostgreSQL a nivel de cloud, CDN/imagenes, autenticacion JWT real ni observabilidad completa con dashboards.

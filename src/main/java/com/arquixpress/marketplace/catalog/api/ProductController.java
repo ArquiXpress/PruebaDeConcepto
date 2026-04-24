@@ -2,8 +2,17 @@ package com.arquixpress.marketplace.catalog.api;
 
 import com.arquixpress.marketplace.catalog.ProductSummary;
 import com.arquixpress.marketplace.catalog.application.CatalogService;
+import com.arquixpress.marketplace.identity.CurrentUser;
+import com.arquixpress.marketplace.identity.Role;
+import com.arquixpress.marketplace.identity.RoleGuard;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.Min;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,11 +21,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/products")
+@Validated
 public class ProductController {
     private final CatalogService catalog;
+    private final com.arquixpress.marketplace.catalog.ProductRepository products;
+    private final RoleGuard roles;
 
-    public ProductController(CatalogService catalog) {
+    public ProductController(CatalogService catalog, com.arquixpress.marketplace.catalog.ProductRepository products, RoleGuard roles) {
         this.catalog = catalog;
+        this.products = products;
+        this.roles = roles;
     }
 
     @GetMapping
@@ -32,4 +46,17 @@ public class ProductController {
     public ProductSummary detail(@PathVariable UUID id) {
         return catalog.detail(id);
     }
+
+    @PatchMapping("/{id}/stock")
+    public ProductSummary updateStock(@PathVariable UUID id, @RequestBody StockChangeRequest request, HttpServletRequest http) {
+        CurrentUser user = CurrentUser.from(http);
+        roles.requireAny(user, Role.SELLER, Role.ADMIN);
+        int updated = products.setStock(id, Math.max(0, request.stock()));
+        if (updated != 1) {
+            throw new IllegalArgumentException("Producto no encontrado");
+        }
+        return catalog.detail(id);
+    }
+
+    public record StockChangeRequest(@Min(0) int stock) {}
 }

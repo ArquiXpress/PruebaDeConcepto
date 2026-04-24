@@ -4,6 +4,7 @@ create table product (
     title varchar(180) not null,
     description varchar(600) not null,
     category varchar(80) not null,
+    image_url varchar(400) not null,
     price numeric(12,2) not null,
     stock_available integer not null check (stock_available >= 0),
     status varchar(20) not null,
@@ -66,3 +67,13 @@ create table notification_outbox (
 );
 
 create index idx_outbox_status_created on notification_outbox(status, created_at);
+
+create table app_user (
+    id uuid primary key,
+    email varchar(180) not null unique,
+    password varchar(120) not null,
+    display_name varchar(120) not null,
+    roles varchar(240) not null
+);
+
+create index idx_app_user_email on app_user(email);

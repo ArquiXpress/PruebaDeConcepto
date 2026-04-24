@@ -1,0 +1,19 @@
+<main class="page">
+  <section class="panel">
+    <div class="panel-head">
+      <h1>Checkout</h1>
+      <a routerLink="/carrito">Volver al carrito</a>
+    </div>
+
+    <p class="muted">Usuario activo: {{ session.currentUser()?.displayName }} ({{ session.currentUser()?.roles?.join(', ') || 'Sin rol' }})</p>
+    <p class="muted">Items en carrito: {{ total() }}</p>
+
+    <button type="button" class="primary" (click)="executeCheckout()" [disabled]="loading || !cart.items().length">
+      {{ loading ? 'Procesando...' : 'Confirmar checkout' }}
+    </button>
+
+    <article class="result" *ngIf="result() as checkoutResult">
+      <pre>{{ checkoutResult | json }}</pre>
+    </article>
+  </section>
+</main>

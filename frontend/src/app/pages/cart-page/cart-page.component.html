@@ -1,0 +1,34 @@
+<main class="page">
+  <section class="panel">
+    <div class="panel-head">
+      <h1>Carrito</h1>
+      <a routerLink="/catalogo">Seguir comprando</a>
+    </div>
+
+    <div *ngIf="cart.items().length; else emptyState" class="cart-list">
+      <article class="cart-row" *ngFor="let item of cart.items()">
+        <div>
+          <strong>{{ product(item.productId)?.title || item.productId }}</strong>
+          <p class="muted">{{ item.quantity }} unidades</p>
+        </div>
+        <div class="row-actions">
+          <span>{{ (product(item.productId)?.price || 0) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+          <button type="button" class="ghost" (click)="cart.remove(item.productId)">Quitar</button>
+        </div>
+      </article>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="empty">
+        <h3>El carrito está vacío</h3>
+        <p>Agrega productos desde el catálogo para continuar.</p>
+      </div>
+    </ng-template>
+
+    <div class="summary">
+      <strong>Total estimado</strong>
+      <span>{{ total() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+    </div>
+    <a class="primary-link" routerLink="/checkout">Ir a checkout</a>
+  </section>
+</main>

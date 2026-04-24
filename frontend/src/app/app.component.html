@@ -1,0 +1,91 @@
+<div class="app-shell">
+  <header class="topbar">
+    <a routerLink="/" class="brand">
+      <img class="brand-mark" src="assets/brand/logo.png" alt="ArquiXpress" />
+      <span class="brand-copy">
+        <strong>ArquiXpress</strong>
+        <small>Al alcance de todos</small>
+      </span>
+    </a>
+
+    <nav class="category-nav" aria-label="Categorías principales">
+      <a routerLink="/catalogo" [queryParams]="{ category: 'tecnologia' }" aria-label="Tecnología">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16v10H4z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 19h8" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+        </span>
+      </a>
+      <a routerLink="/catalogo" [queryParams]="{ category: 'hogar' }" aria-label="Hogar">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5V20H4z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+        </span>
+      </a>
+      <a routerLink="/catalogo" [queryParams]="{ category: 'gaming' }" aria-label="Gaming">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M6 14a4 4 0 0 1 8 0h4a2 2 0 0 1 0 4h-3l-2 2H11l-2-2H6a2 2 0 0 1 0-4Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/></svg>
+        </span>
+      </a>
+      <a routerLink="/catalogo" [queryParams]="{ category: 'moda' }" aria-label="Moda">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M7 5h10l2 4-3 2v8H8v-8L5 9z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+        </span>
+      </a>
+      <a *ngIf="session.canAccessOperations()" routerLink="/operaciones" aria-label="Operaciones">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M5 7h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 10h8M8 13h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </span>
+      </a>
+    </nav>
+
+    <form class="topbar-search" (ngSubmit)="search()">
+      <input
+        name="searchTerm"
+        [(ngModel)]="searchTerm"
+        type="search"
+        placeholder="Buscar productos, marcas o categorías"
+        aria-label="Buscar productos"
+      />
+      <button type="submit" aria-label="Buscar">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+          <path d="M16 16l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+      </button>
+    </form>
+
+    <div class="topbar-actions">
+      <button class="cart-pill" type="button" aria-label="Carrito">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6h15l-1.5 8h-11z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+          <circle cx="9" cy="20" r="1.4" fill="currentColor"/>
+          <circle cx="18" cy="20" r="1.4" fill="currentColor"/>
+          <path d="M3 3h2l2 11h11" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        </svg>
+        <span class="counter">{{ cart.count() }}</span>
+      </button>
+      <span class="session-pill" *ngIf="session.currentUser() as user; else guestState">
+        {{ user.displayName }}
+      </span>
+      <ng-template #guestState>
+        <span class="session-pill muted">Invitado</span>
+      </ng-template>
+      <a class="login-btn" *ngIf="!session.isLoggedIn(); else logoutBtn" routerLink="/login" aria-label="Login">
+        <svg viewBox="0 0 24 24" class="action-icon" aria-hidden="true">
+          <path d="M10 6h6v12h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M13 12H4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="m7 9 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <ng-template #logoutBtn>
+        <button class="login-btn" type="button" (click)="logout()" aria-label="Cerrar sesión">
+          <svg viewBox="0 0 24 24" class="action-icon" aria-hidden="true">
+            <path d="M10 6h6v12h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M13 12H4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="m7 9 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </ng-template>
+    </div>
+  </header>
+
+  <router-outlet />
+</div>

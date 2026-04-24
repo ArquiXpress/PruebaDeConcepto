@@ -63,4 +63,13 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
              where p.id = :productId
             """)
     int releaseStock(@Param("productId") UUID productId, @Param("quantity") int quantity);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Product p
+               set p.stockAvailable = :stock,
+                   p.version = p.version + 1
+             where p.id = :productId
+            """)
+    int setStock(@Param("productId") UUID productId, @Param("stock") int stock);
 }

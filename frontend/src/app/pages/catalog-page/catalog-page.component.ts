@@ -1,0 +1,73 @@
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { CatalogService, ProductPage } from '../../services/catalog.service';
+import { CartService } from '../../services/cart.service';
+import { Product } from '../../models/product';
+
+const CATEGORIES = [
+  'tecnologia',
+  'hogar',
+  'gaming',
+  'moda',
+  'deportes',
+  'telefonia',
+  'oficina',
+  'cocina',
+  'belleza',
+  'auto',
+];
+
+@Component({
+  selector: 'app-catalog-page',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink],
+  templateUrl: './catalog-page.component.html',
+  styleUrl: './catalog-page.component.scss',
+})
+export class CatalogPageComponent implements OnInit {
+  query = '';
+  category = '';
+  loading = false;
+  error = '';
+  page = signal<ProductPage | null>(null);
+  readonly categories = CATEGORIES;
+
+  constructor(
+    private readonly catalog: CatalogService,
+    private readonly route: ActivatedRoute,
+    public readonly cart: CartService
+  ) {}
+
+  ngOnInit(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      this.query = params.get('query') ?? '';
+      this.category = params.get('category') ?? '';
+      this.loadCatalog();
+    });
+  }
+
+  loadCatalog(): void {
+    this.loading = true;
+    this.error = '';
+    this.catalog.search(this.query, this.category, 0, 100).subscribe({
+      next: (page) => {
+        this.page.set(page);
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'No se pudo cargar el catalogo.';
+        this.loading = false;
+      },
+    });
+  }
+
+  addToCart(product: Product): void {
+    this.cart.add(product.id);
+  }
+
+  trackById(_: number, product: Product): string {
+    return product.id;
+  }
+}

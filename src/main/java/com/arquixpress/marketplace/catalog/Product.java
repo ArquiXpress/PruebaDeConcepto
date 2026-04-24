@@ -29,6 +29,9 @@ public class Product {
     @Column(nullable = false)
     private String category;
 
+    @Column(nullable = false)
+    private String imageUrl;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
@@ -54,6 +57,7 @@ public class Product {
     public String title() { return title; }
     public String description() { return description; }
     public String category() { return category; }
+    public String imageUrl() { return imageUrl; }
     public BigDecimal price() { return price; }
     public int stockAvailable() { return stockAvailable; }
     public ProductStatus status() { return status; }
