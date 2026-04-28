@@ -6,7 +6,7 @@
   <title>ArquiXpress Marketplace</title>
   <link rel="stylesheet" href="/app.css" />
 </head>
-<body>
+  <body>
   <header class="topbar">
     <div class="brand">
       <img class="brand-mark" src="/assets/brand/logo.png" alt="ArquiXpress" />
@@ -19,25 +19,43 @@
       <input id="queryInput" class="search-input" placeholder="Buscar productos, marcas o categorías" />
       <button id="clearSearchBtn" class="btn-secondary">Limpiar</button>
     </div>
-    <div class="session-card compact">
-      <label>Rol activo</label>
-      <select id="userSelect"></select>
+    <div class="topbar-right">
+      <nav class="quick-links" aria-label="Accesos rápidos">
+        <a class="quick-link" id="favoritesShortcut" href="#favoritesPanel">
+          <span>Mis favoritos</span>
+          <strong id="headerFavoritesCount">0</strong>
+        </a>
+        <a class="quick-link" id="cartShortcut" href="#cartPanel">
+          <span>Carrito</span>
+          <strong id="headerCartCount">0</strong>
+        </a>
+        <a class="quick-link account-shortcut" href="#accountCard">
+          <span>Mi cuenta</span>
+          <strong id="accountCaption">Perfil activo</strong>
+        </a>
+      </nav>
+      <div class="session-card compact account-card" id="accountCard">
+        <label>Perfil activo</label>
+        <select id="userSelect" aria-label="Seleccionar perfil activo"></select>
+      </div>
     </div>
   </header>
 
   <main class="shell">
     <section class="hero">
-      <div>
-        <p class="eyebrow">ArquiXpress Marketplace</p>
-        <h1>Catálogo visual y flujo por rol</h1>
-        <p class="lead">La página cambia según el rol activo. Cliente compra, vendedor administra stock y admin supervisa inventario y validaciones de prueba.</p>
+      <div class="hero-copy">
+        <p class="eyebrow">Marketplace ArquiXpress</p>
+        <div class="hero-ribbon">Bienvenido a la vitrina principal</div>
+        <h1>Todo lo que necesitas para tu proyecto, en un solo lugar</h1>
+        <p class="lead">Busca, compara y compra rápido o administra inventario desde una misma experiencia.</p>
         <div class="feature-pills">
-          <span>Imágenes en catálogo</span>
-          <span>Paleta azul y blanca</span>
-          <span>Acciones guiadas por rol</span>
+          <span>Productos destacados</span>
+          <span>Compra ágil</span>
+          <span>Gestión por perfil</span>
         </div>
       </div>
       <div class="session-card hero-session">
+        <div class="hero-session-chip">Tu experiencia se adapta al perfil seleccionado</div>
         <div class="session-meta" id="sessionMeta"></div>
         <div class="role-quick" id="roleQuick"></div>
       </div>
@@ -48,12 +66,12 @@
         <div class="role-explainer" id="roleExplainer"></div>
         <div class="panel-head">
           <h2>Destacados</h2>
-          <div class="panel-head-note">Los productos más visibles para navegar rápido.</div>
+          <div class="panel-head-note">Lo más buscado para empezar a explorar.</div>
         </div>
         <div id="featured" class="featured"></div>
         <div class="panel-head catalog-head">
           <h2>Catálogo</h2>
-          <div class="panel-head-note">Compra si eres cliente. Ajusta inventario si eres vendedor o admin.</div>
+          <div class="panel-head-note">Encuentra productos, guarda favoritos o ajusta stock según tu perfil.</div>
         </div>
         <div id="catalog" class="cards"></div>
       </article>
@@ -61,7 +79,7 @@
       <aside class="sidebar">
         <article class="panel role-panel" id="clientPanel">
           <h2>Cliente</h2>
-          <div class="panel-head-note">Favoritos, carrito y pago simulado.</div>
+          <div class="panel-head-note">Revisa tus favoritos, el carrito y simula tu compra.</div>
           <div class="role-actions">
             <button id="checkoutBtn" class="primary">Simular pago</button>
             <div class="summary" id="cartSummary"></div>
@@ -70,14 +88,17 @@
         </article>
         <article class="panel role-panel" id="favoritesPanel">
           <h2>Favoritos</h2>
+          <div class="panel-head-note">Tus productos guardados para volver a ellos rápido.</div>
           <div id="favorites" class="list"></div>
         </article>
         <article class="panel role-panel" id="cartPanel">
           <h2>Carrito</h2>
+          <div class="panel-head-note">Revisa cantidades y total estimado antes del pago.</div>
           <div id="cart" class="list"></div>
         </article>
         <article class="panel role-panel" id="sellerPanel">
           <h2>Inventario y acciones</h2>
+          <div class="panel-head-note">Consulta el stock y realiza ajustes rápidos.</div>
           <div id="inventory" class="list"></div>
         </article>
       </aside>

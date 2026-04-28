@@ -12,6 +12,12 @@ const state = {
 };
 
 const money = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+const ROLE_LABELS = {
+  CLIENT: "Cliente",
+  SELLER: "Vendedor",
+  ADMIN: "Administrador"
+};
+const DEFAULT_PRICE_LABEL = "Precio por confirmar";
 
 const userSelect = document.getElementById("userSelect");
 const queryInput = document.getElementById("queryInput");
@@ -27,9 +33,63 @@ const cartSummary = document.getElementById("cartSummary");
 const inventoryEl = document.getElementById("inventory");
 const checkoutBtn = document.getElementById("checkoutBtn");
 const checkoutResult = document.getElementById("checkoutResult");
+const headerFavoritesCount = document.getElementById("headerFavoritesCount");
+const headerCartCount = document.getElementById("headerCartCount");
+const accountCaption = document.getElementById("accountCaption");
 
 function currentRole() {
   return USERS.find(u => u.id === state.userId)?.role || "CLIENT";
+}
+
+function roleLabel(role) {
+  return ROLE_LABELS[role] || ROLE_LABELS.CLIENT;
+}
+
+function cleanText(value, fallback = "") {
+  const text = typeof value === "string" ? value.trim() : "";
+  return text || fallback;
+}
+
+function truncateText(value, maxLength) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+  return `${value.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function humanizeCategory(category) {
+  return cleanText(category, "General")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
+function productDescription(product) {
+  const description = cleanText(product?.description);
+  if (!description || /^producto de marketplace/i.test(description)) {
+    return `Disponible en ${humanizeCategory(product?.category)} con stock actualizado.`;
+  }
+  return description;
+}
+
+function productTitle(product) {
+  return cleanText(product?.title, "Producto disponible");
+}
+
+function productPrice(product) {
+  return Number.isFinite(product?.price) ? money.format(product.price) : DEFAULT_PRICE_LABEL;
+}
+
+function totalCartItems() {
+  return state.cart.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+function cartLineTotal(item) {
+  return money.format((item.product?.price || 0) * item.quantity);
+}
+
+function updateHeaderStatus() {
+  headerFavoritesCount.textContent = String(state.favorites.length);
+  headerCartCount.textContent = String(totalCartItems());
 }
 
 function headers(extra = {}) {
@@ -48,20 +108,21 @@ function persist() {
 }
 
 function renderSession() {
-  userSelect.innerHTML = USERS.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join("");
+  userSelect.innerHTML = USERS.map(u => `<option value="${u.id}">${u.name} · ${roleLabel(u.role)}</option>`).join("");
   userSelect.value = state.userId;
   const user = USERS.find(u => u.id === state.userId);
-  sessionMeta.textContent = `Usuario demo: ${user.name}. Rol actual: ${user.role}.`;
+  sessionMeta.textContent = `${user.name} · Perfil activo: ${roleLabel(user.role)}.`;
+  accountCaption.textContent = roleLabel(user.role);
   roleQuick.innerHTML = user.role === "CLIENT"
-    ? `<strong>Cliente</strong><span>Comprar, guardar favoritos y pagar.</span>`
+    ? `<strong>Cliente</strong><span>Compra productos, guarda favoritos y revisa tu carrito en segundos.</span>`
     : user.role === "SELLER"
-      ? `<strong>Vendedor</strong><span>Editar stock y ver inventario.</span>`
-      : `<strong>Administrador</strong><span>Supervisar catálogo y validar stock.</span>`;
+      ? `<strong>Vendedor</strong><span>Actualiza stock y mantén el inventario visible para tus clientes.</span>`
+      : `<strong>Administrador</strong><span>Supervisa catálogo, stock y operación general desde la misma vista.</span>`;
   roleExplainer.innerHTML = user.role === "CLIENT"
-    ? "<strong>Cliente:</strong> puede comprar, guardar favoritos y ver su carrito. Si no hay stock, la compra se bloquea."
+    ? "<strong>Cliente:</strong> explora el catálogo, guarda favoritos y compra solo productos con stock disponible."
     : user.role === "SELLER"
-      ? "<strong>Vendedor:</strong> puede ver el catálogo, subir o bajar stock y preparar productos para venta."
-      : "<strong>Admin:</strong> puede supervisar el catálogo, ajustar stock y validar el comportamiento general de la demo.";
+      ? "<strong>Vendedor:</strong> revisa el catálogo y ajusta inventario rápidamente desde cada tarjeta."
+      : "<strong>Administrador:</strong> supervisa el catálogo, ajusta stock y revisa el estado general de la operación.";
 }
 
 function productIllustration(product) {
@@ -73,7 +134,9 @@ function productIllustration(product) {
   };
   const key = (product.category || "default").toLowerCase();
   const [light, strong] = palette[key] || palette.default;
-  const initials = product.title.split(" ").slice(0, 2).map(word => word[0]).join("").toUpperCase();
+  const title = productTitle(product);
+  const initials = title.split(" ").slice(0, 2).map(word => word[0]).join("").toUpperCase();
+  const category = humanizeCategory(product?.category).toUpperCase();
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
       <defs>
@@ -86,7 +149,7 @@ function productIllustration(product) {
       <circle cx="520" cy="82" r="88" fill="rgba(255,255,255,0.24)" />
       <rect x="82" y="86" width="238" height="238" rx="40" fill="rgba(255,255,255,0.58)" />
       <text x="201" y="228" text-anchor="middle" font-size="84" font-family="Arial, sans-serif" fill="#1f2937" font-weight="700">${initials}</text>
-      <text x="82" y="356" font-size="28" font-family="Arial, sans-serif" fill="#1f2937" font-weight="700">${product.category.toUpperCase()}</text>
+      <text x="82" y="356" font-size="28" font-family="Arial, sans-serif" fill="#1f2937" font-weight="700">${category}</text>
       <text x="82" y="390" font-size="22" font-family="Arial, sans-serif" fill="#1f2937">Stock: ${product.stockAvailable}</text>
     </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
@@ -100,31 +163,37 @@ function renderCatalog() {
   const role = currentRole();
   featuredEl.innerHTML = featured.map(product => `
     <article class="featured-card">
-      <img class="product-image" src="${productIllustration(product)}" alt="${product.title}" />
-      <div class="tag">${product.category}</div>
-      <strong>${product.title}</strong>
-      <div class="mini">${product.description}</div>
+      <img class="product-image" src="${productIllustration(product)}" alt="${productTitle(product)}" />
+      <div class="tag">${humanizeCategory(product.category)}</div>
+      <strong>${productTitle(product)}</strong>
+      <div class="mini">${truncateText(productDescription(product), 74)}</div>
     </article>
   `).join("");
   catalogEl.innerHTML = filtered.map(product => `
     <div class="card">
-      <img class="product-image" src="${productIllustration(product)}" alt="${product.title}" />
-      <div class="tag">${product.category}</div>
-      <h3>${product.title}</h3>
-      <p class="short-desc">${product.description || "Producto disponible para demo."}</p>
-      <strong>${money.format(product.price)}</strong>
-      <div class="muted">Stock disponible: ${product.stockAvailable}</div>
-      <div class="role-badge">${role === "CLIENT" ? "Vista de compra" : role === "SELLER" ? "Vista de vendedor" : "Vista de administrador"}</div>
-      <div class="actions">
+      <img class="product-image" src="${productIllustration(product)}" alt="${productTitle(product)}" />
+      <div class="card-body">
+        <div class="card-meta">
+          <div class="tag">${humanizeCategory(product.category)}</div>
+          <div class="role-badge">${role === "CLIENT" ? "Compra" : role === "SELLER" ? "Inventario" : "Admin"}</div>
+        </div>
+        <h3>${productTitle(product)}</h3>
+        <p class="short-desc">${truncateText(productDescription(product), 96)}</p>
+        <div class="price-row">
+          <strong class="price">${productPrice(product)}</strong>
+          <div class="muted stock-copy">Stock: ${product.stockAvailable}</div>
+        </div>
+        <div class="actions">
         ${role === "CLIENT" ? `
-          <button class="btn-primary" data-cart="${product.id}">Agregar al carrito</button>
-          <button class="btn-secondary" data-fav="${product.id}">${state.favorites.includes(product.id) ? "Quitar favorito" : "Favorito"}</button>
+          <button class="btn-primary" data-cart="${product.id}">Agregar</button>
+          <button class="btn-secondary" data-fav="${product.id}">${state.favorites.includes(product.id) ? "Quitar" : "Guardar"}</button>
         ` : `
+          <button class="btn-secondary" data-stock-dec="${product.id}">-1</button>
           <button class="btn-secondary" data-stock-add="${product.id}">+1</button>
-          <button class="btn-secondary" data-stock-dec="${product.id}">-</button>
           <input class="mini-input" data-stock-input="${product.id}" type="number" min="0" value="${product.stockAvailable}" />
           <button class="btn-primary" data-stock="${product.id}">Guardar stock</button>
         `}
+        </div>
       </div>
     </div>
   `).join("");
@@ -140,26 +209,40 @@ function renderSidebars() {
   favoritesEl.innerHTML = state.favorites.length
     ? state.favorites.map(id => {
         const product = state.products.find(p => p.id === id);
-        return `<div class="item"><strong>${product?.title || id}</strong><div class="muted">${product?.category || ""}</div></div>`;
+        return `
+          <div class="item list-item">
+            <div class="item-copy">
+              <strong>${productTitle(product) || id}</strong>
+              <div class="muted">${humanizeCategory(product?.category)}</div>
+            </div>
+            <button class="btn-secondary item-action" data-remove-fav="${id}">Quitar</button>
+          </div>`;
       }).join("")
-    : `<div class="muted">Sin favoritos.</div>`;
+    : `<div class="empty-state">Aun no tienes favoritos guardados.</div>`;
 
   cartEl.innerHTML = cartDetailed.length
     ? cartDetailed.map(item => `
-      <div class="item">
-        <strong>${item.product?.title || item.productId}</strong>
-        <div class="muted">${item.quantity} x ${money.format(item.product?.price || 0)}</div>
+      <div class="item list-item">
+        <div class="item-copy">
+          <strong>${productTitle(item.product) || item.productId}</strong>
+          <div class="muted">${item.quantity} x ${productPrice(item.product)}</div>
+        </div>
+        <div class="item-total">${cartLineTotal(item)}</div>
       </div>
     `).join("")
-    : `<div class="muted">Carrito vacío.</div>`;
+    : `<div class="empty-state">Tu carrito esta vacio por ahora.</div>`;
 
   const total = cartDetailed.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0);
-  cartSummary.textContent = `Items: ${cartDetailed.length} | Total estimado: ${money.format(total)}`;
+  cartSummary.textContent = `Productos: ${totalCartItems()} · Total estimado: ${money.format(total)}`;
+  updateHeaderStatus();
 
   inventoryEl.innerHTML = state.products.map(p => `
-    <div class="item">
-      <strong>${p.title}</strong>
-      <div class="muted">Stock: ${p.stockAvailable}</div>
+    <div class="item list-item">
+      <div class="item-copy">
+        <strong>${productTitle(p)}</strong>
+        <div class="muted">${humanizeCategory(p.category)}</div>
+      </div>
+      <div class="item-total">Stock: ${p.stockAvailable}</div>
     </div>
   `).join("");
 }
@@ -191,6 +274,16 @@ function toggleFavorite(productId) {
   } else {
     state.favorites.push(productId);
   }
+  persist();
+  renderCatalog();
+  renderSidebars();
+}
+
+function removeFavorite(productId) {
+  if (!state.favorites.includes(productId)) {
+    return;
+  }
+  state.favorites = state.favorites.filter(id => id !== productId);
   persist();
   renderCatalog();
   renderSidebars();
@@ -259,6 +352,11 @@ catalogEl.addEventListener("click", (event) => {
   if (stockId) updateStock(stockId);
   if (stockDecId) deltaStock(stockDecId, -1);
   if (stockAddId) deltaStock(stockAddId, 1);
+});
+
+favoritesEl.addEventListener("click", (event) => {
+  const removeFavId = event.target.dataset.removeFav;
+  if (removeFavId) removeFavorite(removeFavId);
 });
 
 checkoutBtn.addEventListener("click", async () => {
