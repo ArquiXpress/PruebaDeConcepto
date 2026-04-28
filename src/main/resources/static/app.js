@@ -8,16 +8,35 @@ const state = {
   products: [],
   cart: JSON.parse(localStorage.getItem("cart") || "[]"),
   favorites: JSON.parse(localStorage.getItem("favorites") || "[]"),
+  orders: JSON.parse(localStorage.getItem("orders") || "[]"),
   userId: localStorage.getItem("userId") || USERS[0].id
 };
 
 const money = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+const dateTime = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" });
 const ROLE_LABELS = {
   CLIENT: "Cliente",
   SELLER: "Vendedor",
   ADMIN: "Administrador"
 };
+const ORDER_STATUS_LABELS = {
+  PENDING_PAYMENT: "Pendiente de pago",
+  PAID: "Pedido confirmado",
+  PAYMENT_REJECTED: "Pago rechazado",
+  CANCELLED: "Cancelado"
+};
+const PAYMENT_STATUS_LABELS = {
+  PENDING: "Pendiente",
+  APPROVED: "Aprobado",
+  REJECTED: "Rechazado"
+};
 const DEFAULT_PRICE_LABEL = "Precio por confirmar";
+const uiState = {
+  checkoutOpen: false,
+  checkoutStage: "idle",
+  checkoutMessage: "Completa los datos para simular la compra.",
+  checkoutOrder: null
+};
 
 const userSelect = document.getElementById("userSelect");
 const queryInput = document.getElementById("queryInput");
@@ -33,6 +52,18 @@ const cartSummary = document.getElementById("cartSummary");
 const inventoryEl = document.getElementById("inventory");
 const checkoutBtn = document.getElementById("checkoutBtn");
 const checkoutResult = document.getElementById("checkoutResult");
+const checkoutFlow = document.getElementById("checkoutFlow");
+const checkoutItemsEl = document.getElementById("checkoutItems");
+const checkoutTotalEl = document.getElementById("checkoutTotal");
+const checkoutForm = document.getElementById("checkoutForm");
+const closeCheckoutBtn = document.getElementById("closeCheckoutBtn");
+const payNowBtn = document.getElementById("payNowBtn");
+const cardNumberInput = document.getElementById("cardNumberInput");
+const cardHolderInput = document.getElementById("cardHolderInput");
+const cardExpiryInput = document.getElementById("cardExpiryInput");
+const cardCvvInput = document.getElementById("cardCvvInput");
+const ordersEl = document.getElementById("orders");
+const inventoryResult = document.getElementById("inventoryResult");
 const headerFavoritesCount = document.getElementById("headerFavoritesCount");
 const headerCartCount = document.getElementById("headerCartCount");
 const accountCaption = document.getElementById("accountCaption");
@@ -41,8 +72,16 @@ function currentRole() {
   return USERS.find(u => u.id === state.userId)?.role || "CLIENT";
 }
 
+function currentUser() {
+  return USERS.find(u => u.id === state.userId) || USERS[0];
+}
+
 function roleLabel(role) {
   return ROLE_LABELS[role] || ROLE_LABELS.CLIENT;
+}
+
+function statusLabel(status, labels, fallback) {
+  return labels[status] || fallback;
 }
 
 function cleanText(value, fallback = "") {
@@ -79,12 +118,136 @@ function productPrice(product) {
   return Number.isFinite(product?.price) ? money.format(product.price) : DEFAULT_PRICE_LABEL;
 }
 
+function detailedCartItems() {
+  return state.cart.map(item => ({
+    ...item,
+    product: state.products.find(product => product.id === item.productId)
+  }));
+}
+
+function cartTotal(items = detailedCartItems()) {
+  return items.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0);
+}
+
 function totalCartItems() {
   return state.cart.reduce((sum, item) => sum + item.quantity, 0);
 }
 
 function cartLineTotal(item) {
   return money.format((item.product?.price || 0) * item.quantity);
+}
+
+function orderTotal(order) {
+  const total = Number(order?.total);
+  return Number.isFinite(total) ? money.format(total) : DEFAULT_PRICE_LABEL;
+}
+
+function checkoutItemsSnapshot(items) {
+  return items.map(item => ({
+    productId: item.productId,
+    title: productTitle(item.product),
+    quantity: item.quantity,
+    price: item.product?.price || 0
+  }));
+}
+
+function ordersForCurrentUser() {
+  return state.orders.filter(order => order.userId === state.userId);
+}
+
+function orderTone(status) {
+  if (status === "APPROVED" || status === "PAID") return "success";
+  if (status === "PENDING" || status === "PENDING_PAYMENT") return "pending";
+  if (status === "REJECTED" || status === "PAYMENT_REJECTED" || status === "CANCELLED") return "error";
+  return "neutral";
+}
+
+function formatOrderDate(value) {
+  if (!value) return "Ahora";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Ahora" : dateTime.format(date);
+}
+
+function buildOrderRecord(data, items, fallbackTotal) {
+  const total = Number(data.total);
+  return {
+    userId: state.userId,
+    orderId: String(data.orderId),
+    orderStatus: cleanText(data.orderStatus, "PENDING_PAYMENT"),
+    paymentStatus: cleanText(data.paymentStatus, "PENDING"),
+    total: Number.isFinite(total) ? total : fallbackTotal,
+    message: cleanText(data.message, "Compra registrada correctamente."),
+    createdAt: new Date().toISOString(),
+    items: checkoutItemsSnapshot(items)
+  };
+}
+
+function upsertOrder(order) {
+  const existingIndex = state.orders.findIndex(item => item.orderId === order.orderId && item.userId === order.userId);
+  if (existingIndex >= 0) {
+    state.orders.splice(existingIndex, 1, { ...state.orders[existingIndex], ...order });
+    return;
+  }
+  state.orders.unshift(order);
+}
+
+function resetCheckoutState() {
+  uiState.checkoutStage = "idle";
+  uiState.checkoutMessage = "Completa los datos para simular la compra.";
+  uiState.checkoutOrder = null;
+}
+
+function openCheckoutFlow(message = "") {
+  uiState.checkoutOpen = true;
+  resetCheckoutState();
+  if (!state.cart.length) {
+    uiState.checkoutStage = "error";
+    uiState.checkoutMessage = message || "Agrega productos al carrito antes de continuar.";
+  } else if (message) {
+    uiState.checkoutMessage = message;
+  }
+  renderCheckoutFlow();
+}
+
+function closeCheckoutFlow() {
+  if (uiState.checkoutStage === "processing") {
+    return;
+  }
+  uiState.checkoutOpen = false;
+  resetCheckoutState();
+  checkoutForm.reset();
+  renderCheckoutFlow();
+}
+
+function validateCheckoutForm() {
+  const cardNumber = cardNumberInput.value.replace(/\D/g, "");
+  const holder = cleanText(cardHolderInput.value);
+  const expiry = cardExpiryInput.value.replace(/\D/g, "");
+  const cvv = cardCvvInput.value.replace(/\D/g, "");
+  if (!state.cart.length) return "Agrega productos al carrito antes de continuar.";
+  if (cardNumber.length < 16) return "Ingresa un número de tarjeta simulado de 16 dígitos.";
+  if (holder.length < 4) return "Ingresa el nombre del titular.";
+  if (expiry.length !== 4) return "Ingresa una fecha de vencimiento válida.";
+  if (cvv.length < 3) return "Ingresa un CVV válido.";
+  return "";
+}
+
+function formatCardNumber() {
+  const digits = cardNumberInput.value.replace(/\D/g, "").slice(0, 16);
+  cardNumberInput.value = digits.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
+}
+
+function formatCardExpiry() {
+  const digits = cardExpiryInput.value.replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 2) {
+    cardExpiryInput.value = digits;
+    return;
+  }
+  cardExpiryInput.value = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+}
+
+function formatCardCvv() {
+  cardCvvInput.value = cardCvvInput.value.replace(/\D/g, "").slice(0, 4);
 }
 
 function updateHeaderStatus() {
@@ -104,13 +267,14 @@ function headers(extra = {}) {
 function persist() {
   localStorage.setItem("cart", JSON.stringify(state.cart));
   localStorage.setItem("favorites", JSON.stringify(state.favorites));
+  localStorage.setItem("orders", JSON.stringify(state.orders));
   localStorage.setItem("userId", state.userId);
 }
 
 function renderSession() {
   userSelect.innerHTML = USERS.map(u => `<option value="${u.id}">${u.name} · ${roleLabel(u.role)}</option>`).join("");
   userSelect.value = state.userId;
-  const user = USERS.find(u => u.id === state.userId);
+  const user = currentUser();
   sessionMeta.textContent = `${user.name} · Perfil activo: ${roleLabel(user.role)}.`;
   accountCaption.textContent = roleLabel(user.role);
   roleQuick.innerHTML = user.role === "CLIENT"
@@ -201,10 +365,7 @@ function renderCatalog() {
 }
 
 function renderSidebars() {
-  const cartDetailed = state.cart.map(item => {
-    const product = state.products.find(p => p.id === item.productId);
-    return { ...item, product };
-  });
+  const cartDetailed = detailedCartItems();
 
   favoritesEl.innerHTML = state.favorites.length
     ? state.favorites.map(id => {
@@ -232,7 +393,7 @@ function renderSidebars() {
     `).join("")
     : `<div class="empty-state">Tu carrito esta vacio por ahora.</div>`;
 
-  const total = cartDetailed.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0);
+  const total = cartTotal(cartDetailed);
   cartSummary.textContent = `Productos: ${totalCartItems()} · Total estimado: ${money.format(total)}`;
   updateHeaderStatus();
 
@@ -245,6 +406,121 @@ function renderSidebars() {
       <div class="item-total">Stock: ${p.stockAvailable}</div>
     </div>
   `).join("");
+
+  renderOrders();
+  renderCheckoutFlow();
+}
+
+function renderOrders() {
+  const orders = ordersForCurrentUser();
+  ordersEl.innerHTML = orders.length
+    ? orders.map(order => `
+      <article class="item order-card">
+        <div class="order-top">
+          <div>
+            <strong>Pedido registrado</strong>
+            <div class="muted">${formatOrderDate(order.createdAt)}</div>
+          </div>
+          <div class="item-total">${orderTotal(order)}</div>
+        </div>
+        <div class="order-grid">
+          <div class="order-data">
+            <span>Número de pedido</span>
+            <strong class="order-id">${order.orderId}</strong>
+          </div>
+          <div class="order-data">
+            <span>Estado del pedido</span>
+            <div class="status-pill is-${orderTone(order.orderStatus)}">${statusLabel(order.orderStatus, ORDER_STATUS_LABELS, "En proceso")}</div>
+          </div>
+          <div class="order-data">
+            <span>Estado del pago</span>
+            <div class="status-pill is-${orderTone(order.paymentStatus)}">${statusLabel(order.paymentStatus, PAYMENT_STATUS_LABELS, "En revisión")}</div>
+          </div>
+          <div class="order-data">
+            <span>Total</span>
+            <strong>${orderTotal(order)}</strong>
+          </div>
+        </div>
+      </article>
+    `).join("")
+    : `<div class="empty-state">Todavía no tienes compras confirmadas.</div>`;
+}
+
+function renderCheckoutResult() {
+  const order = uiState.checkoutOrder;
+  const totalLabel = uiState.checkoutStage === "success" ? "Total pagado" : "Total";
+  let variant = "neutral";
+  let title = "Completa tus datos de pago";
+  let subtitle = "Confirma el pedido para simular una compra dentro del flujo.";
+  if (uiState.checkoutStage === "processing") {
+    variant = "processing";
+    title = "Procesando pago...";
+    subtitle = "Estamos validando tu compra simulada.";
+  } else if (uiState.checkoutStage === "success") {
+    variant = "success";
+    title = "Pago aprobado";
+    subtitle = "Pedido confirmado";
+  } else if (uiState.checkoutStage === "pending") {
+    variant = "pending";
+    title = "Pago pendiente";
+    subtitle = "Pedido registrado y pendiente de confirmación.";
+  } else if (uiState.checkoutStage === "rejected") {
+    variant = "error";
+    title = "Pago rechazado";
+    subtitle = "No fue posible confirmar el pago.";
+  } else if (uiState.checkoutStage === "error") {
+    variant = "error";
+    title = "No se pudo completar la compra";
+    subtitle = uiState.checkoutMessage;
+  }
+
+  checkoutResult.className = `checkout-result-card is-${variant}`;
+  checkoutResult.innerHTML = `
+    <div class="checkout-result-kicker">Resultado del checkout</div>
+    <strong>${title}</strong>
+    <div class="checkout-result-subtitle">${subtitle}</div>
+    ${order ? `
+      <div class="checkout-result-meta">
+        <div><span>Número de pedido</span><strong>${order.orderId}</strong></div>
+        <div><span>${totalLabel}</span><strong>${orderTotal(order)}</strong></div>
+      </div>
+      ${order.message ? `<div class="checkout-result-message">${order.message}</div>` : ""}
+    ` : `<div class="checkout-result-message">${uiState.checkoutMessage}</div>`}
+  `;
+}
+
+function renderCheckoutFlow() {
+  const resolvedStage = ["success", "pending", "rejected"].includes(uiState.checkoutStage);
+  const items = resolvedStage && uiState.checkoutOrder?.items?.length
+    ? uiState.checkoutOrder.items
+    : checkoutItemsSnapshot(detailedCartItems());
+  const total = resolvedStage && uiState.checkoutOrder ? Number(uiState.checkoutOrder.total) : cartTotal();
+  const isProcessing = uiState.checkoutStage === "processing";
+
+  checkoutFlow.hidden = !uiState.checkoutOpen;
+  checkoutItemsEl.innerHTML = items.length
+    ? items.map(item => `
+      <div class="checkout-item">
+        <div>
+          <strong>${cleanText(item.title, "Producto disponible")}</strong>
+          <small>${item.quantity} x ${Number.isFinite(item.price) ? money.format(item.price) : DEFAULT_PRICE_LABEL}</small>
+        </div>
+        <strong>${money.format((item.price || 0) * item.quantity)}</strong>
+      </div>
+    `).join("")
+    : `<div class="empty-state">Tu carrito esta vacio por ahora.</div>`;
+  checkoutTotalEl.textContent = Number.isFinite(total) ? money.format(total) : DEFAULT_PRICE_LABEL;
+
+  checkoutForm.classList.toggle("is-finished", resolvedStage);
+  payNowBtn.hidden = resolvedStage;
+  closeCheckoutBtn.textContent = resolvedStage ? "Listo" : "Cerrar";
+  [cardNumberInput, cardHolderInput, cardExpiryInput, cardCvvInput].forEach(input => {
+    input.disabled = isProcessing || resolvedStage;
+  });
+  payNowBtn.disabled = isProcessing || !items.length;
+  closeCheckoutBtn.disabled = isProcessing;
+
+  renderCheckoutResult();
 }
 
 async function loadProducts() {
@@ -298,9 +574,10 @@ async function updateStock(productId) {
     body: JSON.stringify({ stock })
   });
   const data = await response.json();
-  checkoutResult.textContent = response.ok
+  inventoryResult.textContent = response.ok
     ? `Stock actualizado: ${data.title} ahora tiene ${data.stockAvailable}`
     : `No se pudo actualizar el stock: ${data.message || "error"}`;
+  inventoryResult.className = `inline-status ${response.ok ? "is-success" : "is-error"}`;
   await loadProducts();
 }
 
@@ -314,10 +591,16 @@ function deltaStock(productId, delta) {
 
 function applyRoleRules() {
   const role = currentRole();
+  if (role !== "CLIENT") {
+    uiState.checkoutOpen = false;
+    resetCheckoutState();
+    checkoutForm.reset();
+  }
   checkoutBtn.disabled = role !== "CLIENT";
   document.getElementById("clientPanel").style.display = role === "CLIENT" ? "block" : "none";
   document.getElementById("cartPanel").style.display = role === "CLIENT" ? "block" : "none";
   document.getElementById("favoritesPanel").style.display = role === "CLIENT" ? "block" : "none";
+  document.getElementById("ordersPanel").style.display = role === "CLIENT" ? "block" : "none";
   document.getElementById("sellerPanel").style.display = role === "CLIENT" ? "none" : "block";
   catalogEl.querySelectorAll("[data-cart]").forEach(button => button.disabled = role !== "CLIENT");
   catalogEl.querySelectorAll("[data-fav]").forEach(button => button.disabled = role !== "CLIENT");
@@ -325,6 +608,7 @@ function applyRoleRules() {
   catalogEl.querySelectorAll("[data-stock-dec]").forEach(button => button.disabled = role === "CLIENT");
   catalogEl.querySelectorAll("[data-stock-add]").forEach(button => button.disabled = role === "CLIENT");
   catalogEl.querySelectorAll("[data-stock-input]").forEach(input => input.disabled = role === "CLIENT");
+  renderCheckoutFlow();
 }
 
 userSelect.addEventListener("change", async () => {
@@ -359,25 +643,84 @@ favoritesEl.addEventListener("click", (event) => {
   if (removeFavId) removeFavorite(removeFavId);
 });
 
-checkoutBtn.addEventListener("click", async () => {
+checkoutBtn.addEventListener("click", () => {
   if (!state.cart.length) {
-    checkoutResult.textContent = "Agrega productos al carrito antes de simular el pago.";
+    openCheckoutFlow("Agrega productos al carrito antes de continuar.");
     return;
   }
+  openCheckoutFlow();
+});
+
+closeCheckoutBtn.addEventListener("click", closeCheckoutFlow);
+
+cardNumberInput.addEventListener("input", formatCardNumber);
+cardExpiryInput.addEventListener("input", formatCardExpiry);
+cardCvvInput.addEventListener("input", formatCardCvv);
+
+checkoutForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const validationMessage = validateCheckoutForm();
+  if (validationMessage) {
+    uiState.checkoutStage = "error";
+    uiState.checkoutMessage = validationMessage;
+    renderCheckoutFlow();
+    return;
+  }
+
+  const items = detailedCartItems();
+  const total = cartTotal(items);
   const body = {
-    items: state.cart.map(item => ({ productId: item.productId, quantity: item.quantity }))
+    items: items.map(item => ({ productId: item.productId, quantity: item.quantity }))
   };
-  const response = await fetch("/api/checkout", {
-    method: "POST",
-    headers: headers({ "Idempotency-Key": `demo-${Date.now()}` }),
-    body: JSON.stringify(body)
-  });
-  const data = await response.json();
-  checkoutResult.textContent = JSON.stringify(data, null, 2);
-  if (response.ok && data.paymentStatus === "APPROVED") {
-    state.cart = [];
+  uiState.checkoutStage = "processing";
+  uiState.checkoutMessage = "Estamos procesando tu pago simulado.";
+  uiState.checkoutOrder = {
+    orderId: "Generando...",
+    total,
+    items: checkoutItemsSnapshot(items)
+  };
+  renderCheckoutFlow();
+
+  try {
+    const [response] = await Promise.all([
+      fetch("/api/checkout", {
+        method: "POST",
+        headers: headers({ "Idempotency-Key": `demo-${Date.now()}` }),
+        body: JSON.stringify(body)
+      }),
+      new Promise(resolve => setTimeout(resolve, 700))
+    ]);
+    const data = await response.json();
+    if (!response.ok) {
+      uiState.checkoutStage = "error";
+      uiState.checkoutMessage = cleanText(data.message, "No pudimos completar la compra en este momento.");
+      uiState.checkoutOrder = null;
+      renderCheckoutFlow();
+      await loadProducts();
+      return;
+    }
+
+    const order = buildOrderRecord(data, items, total);
+    upsertOrder(order);
+    uiState.checkoutOrder = order;
+    uiState.checkoutMessage = order.message;
+    if (order.paymentStatus === "APPROVED") {
+      uiState.checkoutStage = "success";
+      state.cart = [];
+      checkoutForm.reset();
+    } else if (order.paymentStatus === "PENDING") {
+      uiState.checkoutStage = "pending";
+    } else {
+      uiState.checkoutStage = "rejected";
+    }
     persist();
     renderSidebars();
+    renderCatalog();
+  } catch (error) {
+    uiState.checkoutStage = "error";
+    uiState.checkoutMessage = "No pudimos procesar el pago simulado. Intenta de nuevo en unos segundos.";
+    uiState.checkoutOrder = null;
+    renderCheckoutFlow();
   }
 });
 

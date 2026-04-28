@@ -6,7 +6,7 @@
   <title>ArquiXpress Marketplace</title>
   <link rel="stylesheet" href="/app.css" />
 </head>
-  <body>
+<body>
   <header class="topbar">
     <div class="brand">
       <img class="brand-mark" src="/assets/brand/logo.png" alt="ArquiXpress" />
@@ -79,12 +79,51 @@
       <aside class="sidebar">
         <article class="panel role-panel" id="clientPanel">
           <h2>Cliente</h2>
-          <div class="panel-head-note">Revisa tus favoritos, el carrito y simula tu compra.</div>
+          <div class="panel-head-note">Revisa tus favoritos, el carrito y confirma tu compra.</div>
           <div class="role-actions">
-            <button id="checkoutBtn" class="primary">Simular pago</button>
+            <button id="checkoutBtn" class="primary">Finalizar compra</button>
             <div class="summary" id="cartSummary"></div>
           </div>
-          <pre id="checkoutResult" class="result"></pre>
+          <section id="checkoutFlow" class="checkout-flow" hidden>
+            <div class="checkout-flow-head">
+              <div>
+                <h3>Checkout simulado</h3>
+                <div class="panel-head-note">Confirma tu pedido y completa los datos para finalizar la compra.</div>
+              </div>
+              <button id="closeCheckoutBtn" class="btn-secondary checkout-close" type="button">Cerrar</button>
+            </div>
+            <div class="checkout-layout">
+              <div class="checkout-box">
+                <div class="checkout-box-title">Resumen del pedido</div>
+                <div id="checkoutItems" class="checkout-items"></div>
+                <div class="checkout-total-row">
+                  <span>Total a pagar</span>
+                  <strong id="checkoutTotal"></strong>
+                </div>
+              </div>
+              <form id="checkoutForm" class="checkout-box checkout-form">
+                <label class="field field-wide">
+                  <span>Número de tarjeta</span>
+                  <input id="cardNumberInput" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="4111 1111 1111 1111" maxlength="19" required />
+                </label>
+                <label class="field field-wide">
+                  <span>Nombre del titular</span>
+                  <input id="cardHolderInput" type="text" autocomplete="cc-name" placeholder="Como aparece en la tarjeta" maxlength="60" required />
+                </label>
+                <label class="field">
+                  <span>Fecha de vencimiento</span>
+                  <input id="cardExpiryInput" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" required />
+                </label>
+                <label class="field">
+                  <span>CVV</span>
+                  <input id="cardCvvInput" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" required />
+                </label>
+                <p class="checkout-note">Pago simulado para prueba del flujo</p>
+                <button id="payNowBtn" class="primary checkout-pay" type="submit">Pagar ahora</button>
+              </form>
+            </div>
+            <div id="checkoutResult" class="checkout-result-card" aria-live="polite"></div>
+          </section>
         </article>
         <article class="panel role-panel" id="favoritesPanel">
           <h2>Favoritos</h2>
@@ -96,9 +135,15 @@
           <div class="panel-head-note">Revisa cantidades y total estimado antes del pago.</div>
           <div id="cart" class="list"></div>
         </article>
+        <article class="panel role-panel" id="ordersPanel">
+          <h2>Mis compras</h2>
+          <div class="panel-head-note">Consulta el estado de tus pedidos recientes y pagos confirmados.</div>
+          <div id="orders" class="list"></div>
+        </article>
         <article class="panel role-panel" id="sellerPanel">
           <h2>Inventario y acciones</h2>
           <div class="panel-head-note">Consulta el stock y realiza ajustes rápidos.</div>
+          <div id="inventoryResult" class="inline-status" aria-live="polite"></div>
           <div id="inventory" class="list"></div>
         </article>
       </aside>
