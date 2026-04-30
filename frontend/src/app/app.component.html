@@ -29,9 +29,14 @@
           <svg viewBox="0 0 24 24"><path d="M7 5h10l2 4-3 2v8H8v-8L5 9z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
         </span>
       </a>
-      <a *ngIf="session.canAccessOperations()" routerLink="/operaciones" aria-label="Operaciones">
+<a *ngIf="session.isOperator() || session.isAdmin() || session.hasRole('SUPERADMIN')" routerLink="/logistica" aria-label="Hub logistico">
         <span class="nav-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M5 7h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 10h8M8 13h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 24 24">
+            <path d="M3 7h11v9H3z" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M14 10h4l3 3v3h-7z" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <circle cx="7" cy="18" r="1.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <circle cx="17" cy="18" r="1.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          </svg>
         </span>
       </a>
     </nav>

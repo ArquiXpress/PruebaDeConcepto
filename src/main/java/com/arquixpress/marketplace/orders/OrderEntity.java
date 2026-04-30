@@ -35,6 +35,12 @@ public class OrderEntity {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal total;
 
+    @Column(name = "logistics_center_id")
+    private UUID logisticsCenterId;
+
+    @Column(name = "logistics_operator_id")
+    private UUID logisticsOperatorId;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -93,11 +99,20 @@ public class OrderEntity {
         updatedAt = Instant.now();
     }
 
+    public void assignCenter(UUID centerId, UUID operatorId) {
+        this.logisticsCenterId = centerId;
+        this.logisticsOperatorId = operatorId;
+        this.updatedAt = Instant.now();
+    }
+
     public UUID id() { return id; }
     public UUID buyerId() { return buyerId; }
     public OrderStatus status() { return status; }
     public ShipmentStatus shipmentStatus() { return shipmentStatus; }
     public BigDecimal total() { return total; }
+    public UUID logisticsCenterId() { return logisticsCenterId; }
+    public UUID logisticsOperatorId() { return logisticsOperatorId; }
     public Instant createdAt() { return createdAt; }
+    public Instant updatedAt() { return updatedAt; }
     public List<OrderLine> lines() { return List.copyOf(lines); }
 }

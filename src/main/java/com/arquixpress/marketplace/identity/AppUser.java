@@ -26,6 +26,9 @@ public class AppUser {
     @Column(nullable = false)
     private String roles;
 
+    @Column(name = "city")
+    private String city;
+
     protected AppUser() {
     }
 
@@ -39,21 +42,11 @@ public class AppUser {
         return user;
     }
 
-    public UUID id() {
-        return id;
-    }
-
-    public String email() {
-        return email;
-    }
-
-    public String password() {
-        return password;
-    }
-
-    public String displayName() {
-        return displayName;
-    }
+    public UUID id() { return id; }
+    public String email() { return email; }
+    public String password() { return password; }
+    public String displayName() { return displayName; }
+    public String city() { return city; }
 
     public Set<Role> roleSet() {
         return Arrays.stream(roles.split(","))

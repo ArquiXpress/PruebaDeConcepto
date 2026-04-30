@@ -3,6 +3,8 @@ package com.arquixpress.marketplace.orders;
 import com.arquixpress.marketplace.catalog.Product;
 import com.arquixpress.marketplace.catalog.ProductRepository;
 import com.arquixpress.marketplace.catalog.ProductStatus;
+import com.arquixpress.marketplace.logistics.LogisticsCenter;
+import com.arquixpress.marketplace.logistics.LogisticsCenterRepository;
 import com.arquixpress.marketplace.notifications.NotificationOutbox;
 import com.arquixpress.marketplace.notifications.NotificationOutboxRepository;
 import com.arquixpress.marketplace.payments.PaymentGatewayClient;
@@ -10,7 +12,9 @@ import com.arquixpress.marketplace.payments.PaymentGatewayResult;
 import com.arquixpress.marketplace.payments.PaymentStatus;
 import com.arquixpress.marketplace.payments.PaymentTransaction;
 import com.arquixpress.marketplace.payments.PaymentTransactionRepository;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,15 +27,18 @@ public class CheckoutService {
     private final PaymentTransactionRepository payments;
     private final PaymentGatewayClient paymentGateway;
     private final NotificationOutboxRepository outbox;
+    private final LogisticsCenterRepository centers;
     private final TransactionTemplate tx;
 
     public CheckoutService(ProductRepository products, OrderRepository orders, PaymentTransactionRepository payments,
-            PaymentGatewayClient paymentGateway, NotificationOutboxRepository outbox, TransactionTemplate tx) {
+            PaymentGatewayClient paymentGateway, NotificationOutboxRepository outbox,
+            LogisticsCenterRepository centers, TransactionTemplate tx) {
         this.products = products;
         this.orders = orders;
         this.payments = payments;
         this.paymentGateway = paymentGateway;
         this.outbox = outbox;
+        this.centers = centers;
         this.tx = tx;
     }
 
@@ -78,8 +85,17 @@ public class CheckoutService {
         });
     }
 
+    public List<OrderResponse> listShipmentsByCenter(UUID centerId) {
+        List<OrderEntity> list = centerId == null ? orders.findAllPaid() : orders.findPaidByCenter(centerId);
+        return list.stream().map(OrderResponse::from).toList();
+    }
+
     private PendingCheckout createPendingOrder(UUID buyerId, CheckoutRequest request, String idempotencyKey) {
         OrderEntity order = new OrderEntity(UUID.randomUUID(), buyerId);
+        UUID centerId = pickCenterId();
+        if (centerId != null) {
+            order.assignCenter(centerId, null);
+        }
         for (CheckoutItemRequest item : request.items()) {
             Product product = products.findByIdAndStatus(item.productId(), ProductStatus.ACTIVE)
                     .orElseThrow(() -> new CheckoutProblem("PRODUCT_NOT_FOUND", "Producto no encontrado", HttpStatus.NOT_FOUND));
@@ -133,6 +149,14 @@ public class CheckoutService {
     private OrderEntity findOrder(UUID orderId) {
         return orders.findWithLines(orderId)
                 .orElseThrow(() -> new CheckoutProblem("ORDER_NOT_FOUND", "Pedido no encontrado", HttpStatus.NOT_FOUND));
+    }
+
+    private UUID pickCenterId() {
+        List<LogisticsCenter> all = centers.findAll();
+        if (all.isEmpty()) {
+            return null;
+        }
+        return all.get(ThreadLocalRandom.current().nextInt(all.size())).id();
     }
 
     private String requireKey(String idempotencyKey) {

@@ -71,7 +71,4 @@ export class SessionService {
     return this.hasRole('LOGISTICS');
   }
 
-  canAccessOperations(): boolean {
-    return this.hasRole('LOGISTICS') || this.hasRole('ADMIN') || this.hasRole('SUPERADMIN');
-  }
 }
