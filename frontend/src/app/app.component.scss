@@ -121,6 +121,32 @@
   gap: 12px;
 }
 
+.admin-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.admin-pill:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.1));
+  transform: translateY(-1px);
+}
+
+.admin-pill svg {
+  width: 16px;
+  height: 16px;
+}
+
 .cart-pill {
   position: relative;
   width: 46px;

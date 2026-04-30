@@ -55,12 +55,36 @@ public class AppUser {
         return displayName;
     }
 
+    public String roles() {
+        return roles;
+    }
+
     public Set<Role> roleSet() {
         return Arrays.stream(roles.split(","))
                 .map(String::trim)
                 .filter(value -> !value.isBlank())
                 .map(Role::valueOf)
                 .collect(java.util.stream.Collectors.toSet());
+    }
+
+    public void setRoles(String roles) {
+        this.roles = roles;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
     }
 
     public AuthUser toAuthUser() {

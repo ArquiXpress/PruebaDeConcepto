@@ -4,8 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CatalogService, ProductPage } from '../../services/catalog.service';
 import { CartService } from '../../services/cart.service';
-import { CartUIService } from '../../services/cart-ui.service';
-import { RollbackService } from '../../services/rollback.service';
 import { SessionService } from '../../services/session.service';
 import { Product } from '../../models/product';
 
@@ -19,16 +17,15 @@ import { Product } from '../../models/product';
 export class HomeComponent implements OnInit {
   loading = false;
   error = '';
-  rollbackLoading = false;
+  cartOpen = false;
   featuredIndex = 0;
   page = signal<ProductPage | null>(null);
+  private readonly productCache = new Map<string, Product>();
 
   constructor(
     private readonly catalog: CatalogService,
     public readonly cart: CartService,
-    public readonly cartUI: CartUIService,
     public readonly session: SessionService,
-    private readonly rollback: RollbackService,
     private readonly router: Router
   ) {}
 
@@ -41,6 +38,7 @@ export class HomeComponent implements OnInit {
     this.catalog.search('', '', 0, 100).subscribe({
       next: (page) => {
         this.page.set(page);
+        page.content.forEach((product) => this.productCache.set(product.id, product));
         this.loading = false;
       },
       error: () => {
@@ -52,7 +50,7 @@ export class HomeComponent implements OnInit {
 
   addToCart(product: Product): void {
     this.cart.add(product.id);
-    this.cartUI.open();
+    this.cartOpen = true;
   }
 
   featured(): Product[] {
@@ -92,23 +90,23 @@ export class HomeComponent implements OnInit {
     return this.page()?.content?.filter((product) => product.category === category) ?? [];
   }
 
-  performRollback(): void {
-    if (!confirm('¿Estás seguro? Esto restaurará la base de datos al estado inicial y perderás todos los cambios.')) {
-      return;
-    }
+  toggleCart(): void {
+    this.cartOpen = !this.cartOpen;
+  }
 
-    this.rollbackLoading = true;
-    this.rollback.performRollback().subscribe({
-      next: (response) => {
-        this.rollbackLoading = false;
-        alert(response.message);
-        // Recargar la página
-        window.location.reload();
-      },
-      error: () => {
-        this.rollbackLoading = false;
-        alert('Error al hacer rollback. Intenta de nuevo.');
-      },
-    });
+  checkout(): void {
+    this.cartOpen = false;
+    this.router.navigateByUrl('/checkout');
+  }
+
+  productById(productId: string): Product | undefined {
+    return this.productCache.get(productId) ?? this.page()?.content?.find((product) => product.id === productId);
+  }
+
+  subtotal(): number {
+    return this.cart.items().reduce((sum, item) => {
+      const product = this.productById(item.productId);
+      return sum + (product?.price ?? 0) * item.quantity;
+    }, 0);
   }
 }

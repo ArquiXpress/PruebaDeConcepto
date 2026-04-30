@@ -16,7 +16,7 @@
   margin: 0 auto 28px;
 }
 
-.hero-copy, .hero-panel, .product-card {
+.hero-copy, .hero-panel, .product-card, .cart-modal {
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(37, 99, 235, 0.12);
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
@@ -129,7 +129,7 @@ h1 {
   height: 22px;
 }
 
-.category-pills a, .ghost, .solid, .add-btn {
+.category-pills a, .ghost, .solid, .icon-btn, .add-btn {
   border-radius: 999px;
   border: 0;
   text-decoration: none;
@@ -185,43 +185,6 @@ h1 {
   background: linear-gradient(135deg, #2563eb, #60a5fa);
   color: #fff;
   font-weight: 900;
-}
-
-.rollback-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  background: rgba(239, 68, 68, 0.08);
-  color: #ef4444;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.rollback-btn:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.5);
-}
-
-.rollback-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.rollback-icon {
-  width: 16px;
-  height: 16px;
-  display: inline-flex;
-  flex-shrink: 0;
-}
-
-.rollback-icon svg {
-  width: 100%;
-  height: 100%;
 }
 
 .section {
@@ -307,6 +270,82 @@ h1 {
   color: #64748b;
 }
 
+.cart-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.34);
+  z-index: 40;
+}
+
+.cart-modal {
+  position: fixed;
+  top: 96px;
+  right: 28px;
+  z-index: 50;
+  width: min(420px, calc(100vw - 32px));
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.cart-modal header, .cart-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cart-modal header {
+  justify-content: space-between;
+}
+
+.cart-items {
+  display: grid;
+  gap: 12px;
+  max-height: 50vh;
+  overflow: auto;
+}
+
+.cart-item {
+  justify-content: space-between;
+}
+
+.thumb {
+  width: 68px;
+  height: 68px;
+}
+
+.cart-copy {
+  display: grid;
+  flex: 1;
+}
+
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  justify-content: center;
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  cursor: pointer;
+}
+
+.full {
+  width: 100%;
+  justify-content: center;
+}
+
+.subtotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #0f172a;
+}
+
+.cart-modal footer {
+  display: grid;
+  gap: 12px;
+  padding-top: 6px;
+}
+
 @media (max-width: 980px) {
   .home {
     padding: 18px 18px 48px;
@@ -318,6 +357,12 @@ h1 {
 
   .hero-copy {
     padding: 28px;
+  }
+
+  .cart-modal {
+    right: 16px;
+    left: 16px;
+    width: auto;
   }
 
   .carousel-shell {

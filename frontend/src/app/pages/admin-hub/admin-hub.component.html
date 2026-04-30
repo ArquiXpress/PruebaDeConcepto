@@ -1,0 +1,85 @@
+<div class="admin-modal-backdrop" (click)="adminUI.close()" *ngIf="adminUI.isOpen()"></div>
+
+<div class="admin-modal" *ngIf="adminUI.isOpen()">
+  <!-- Header -->
+  <div class="admin-header">
+    <div>
+      <h2>Gestión de Usuarios</h2>
+      <p class="admin-subtitle">Administra los roles de los usuarios del sistema</p>
+    </div>
+    <button type="button" class="close-btn" (click)="adminUI.close()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24">
+        <path d="M18 6 6 18M6 6 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="admin-content">
+    <div *ngIf="usersLoading" class="loading">Cargando usuarios...</div>
+
+    <div class="users-table" *ngIf="users() && !usersLoading">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Nombre</th>
+            <th>Roles</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users()">
+            <td>{{ user.email }}</td>
+            <td>{{ user.displayName }}</td>
+            <td>
+              <span class="role-badge" *ngFor="let role of user.roles.split(',')">
+                {{ role.trim() }}
+              </span>
+            </td>
+            <td>
+              <button type="button" class="edit-btn" (click)="openEditModal(user)" title="Editar roles">
+                ✎ Editar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Roles Modal -->
+<div class="edit-roles-backdrop" (click)="closeEditModal()" *ngIf="editModalOpen()"></div>
+<div class="edit-roles-modal" *ngIf="editModalOpen()">
+  <div class="modal-header">
+    <h3>Editar Roles - {{ editingUser()?.displayName }}</h3>
+    <button type="button" class="close-btn" (click)="closeEditModal()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24">
+        <path d="M18 6 6 18M6 6 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="modal-content">
+    <div class="email-info">{{ editingUser()?.email }}</div>
+
+    <div class="roles-grid">
+      <label class="role-checkbox" *ngFor="let role of availableRoles">
+        <input type="checkbox" [checked]="hasRole(role)" (change)="toggleRole(role)" />
+        <span class="checkbox-label">
+          <strong>{{ role }}</strong>
+          <small *ngIf="role === 'ADMIN'">Acceso total al panel</small>
+          <small *ngIf="role === 'CLIENT'">Comprador normal</small>
+          <small *ngIf="role === 'SELLER'">Puede vender productos</small>
+          <small *ngIf="role === 'LOGISTICS'">Gestión de entregas</small>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancelar</button>
+    <button type="button" class="btn-save" (click)="saveUserRoles()">Guardar Cambios</button>
+  </div>
+</div>

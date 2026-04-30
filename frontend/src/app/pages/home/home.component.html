@@ -15,13 +15,9 @@
         <a class="solid" routerLink="/login">Entrar</a>
         <a class="ghost" routerLink="/registro">Crear cuenta</a>
         <a class="ghost" routerLink="/catalogo">Ver catálogo</a>
-        <button type="button" class="ghost" (click)="cartUI.toggle()">
+        <button type="button" class="ghost" (click)="toggleCart()">
           <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M6 6h15l-1.5 8h-11z" fill="none" stroke="currentColor" stroke-width="1.8" />
-              <circle cx="9" cy="20" r="1.4" fill="currentColor" />
-              <circle cx="18" cy="20" r="1.4" fill="currentColor" />
-              <path d="M3 3h2l2 11h11" fill="none" stroke="currentColor" stroke-width="1.8" /></svg>
+            <svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 8h-11z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="20" r="1.4" fill="currentColor"/><circle cx="18" cy="20" r="1.4" fill="currentColor"/><path d="M3 3h2l2 11h11" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
           </span>
           <span>Carrito</span>
         </button>
@@ -35,28 +31,13 @@
         <p>Catálogo curado con productos, imágenes y stock real.</p>
       </div>
       <div class="session-card">
-        <div class="avatar">
-          {{ (session.currentUser()?.displayName || 'G') | slice:0:1 }}</div>
+        <div class="avatar">{{ (session.currentUser()?.displayName || 'G') | slice:0:1 }}</div>
         <div>
           <p class="muted">Sesión</p>
           <strong>{{ session.currentUser()?.displayName || 'Invitado' }}</strong>
-          <p class="muted">
-            {{ session.currentUser()?.roles?.join(', ') || 'Sin rol' }}
-          </p>
+          <p class="muted">{{ session.currentUser()?.roles?.join(', ') || 'Sin rol' }}</p>
         </div>
       </div>
-      <button type="button" class="rollback-btn" (click)="performRollback()" [disabled]="rollbackLoading"
-        title="Restaurar la base de datos al estado inicial" aria-label="Rollback">
-        <span class="rollback-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74"
-              fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M3 8v4h4M17 20v-4h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-              stroke-linejoin="round" />
-          </svg>
-        </span>
-        <span>{{ rollbackLoading ? 'Restaurando...' : 'Rollback' }}</span>
-      </button>
     </aside>
   </section>
 
@@ -68,34 +49,28 @@
 
     <div class="carousel-shell" *ngIf="featured().length; else loadingState">
       <button type="button" class="carousel-nav" (click)="previousFeatured()" aria-label="Anterior">
-        <svg viewBox="0 0 24 24">
-          <path d="M15 6 9 12l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" /></svg>
+        <svg viewBox="0 0 24 24"><path d="M15 6 9 12l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="product-grid carousel-grid">
         <article class="product-card" *ngFor="let product of featuredWindow()">
-          <img class="product-image" [src]="product.imageUrl" [alt]="product.title" />
-          <div class="tag">{{ product.category }}</div>
-          <h3>{{ product.title }}</h3>
-          <p>{{ product.description }}</p>
-          <div class="meta">
-            <strong>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
-            <span>Stock {{ product.stockAvailable }}</span>
-          </div>
-          <button type="button" class="add-btn" (click)="addToCart(product)">Agregar</button>
-        </article>
+        <img class="product-image" [src]="product.imageUrl" [alt]="product.title" />
+        <div class="tag">{{ product.category }}</div>
+        <h3>{{ product.title }}</h3>
+        <p>{{ product.description }}</p>
+        <div class="meta">
+          <strong>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          <span>Stock {{ product.stockAvailable }}</span>
+        </div>
+        <button type="button" class="add-btn" (click)="addToCart(product)">Agregar</button>
+      </article>
       </div>
       <button type="button" class="carousel-nav" (click)="nextFeatured()" aria-label="Siguiente">
-        <svg viewBox="0 0 24 24">
-          <path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" /></svg>
+        <svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
 
     <ng-template #loadingState>
-      <div class="empty">
-        {{ loading ? 'Cargando catálogo...' : 'Sin productos' }}
-      </div>
+      <div class="empty">{{ loading ? 'Cargando catálogo...' : 'Sin productos' }}</div>
     </ng-template>
   </section>
 
@@ -116,13 +91,44 @@
             <img class="mini-image" [src]="product.imageUrl" [alt]="product.title" />
             <div>
               <strong>{{ product.title }}</strong>
-              <p>
-                {{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}
-              </p>
+              <p>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</p>
             </div>
           </article>
         </div>
       </article>
     </div>
   </section>
+
+  <div class="cart-modal-backdrop" *ngIf="cartOpen" (click)="toggleCart()"></div>
+  <aside class="cart-modal" *ngIf="cartOpen">
+    <header>
+      <strong>Carrito</strong>
+      <button type="button" class="icon-btn" (click)="toggleCart()" aria-label="Cerrar carrito">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      </button>
+    </header>
+    <div class="cart-items" *ngIf="cart.items().length; else emptyCart">
+      <div class="cart-item" *ngFor="let item of cart.items()">
+        <img class="thumb" [src]="productById(item.productId)?.imageUrl" [alt]="productById(item.productId)?.title || item.productId" />
+        <div class="cart-copy">
+          <strong>{{ productById(item.productId)?.title || item.productId }}</strong>
+          <span>{{ item.quantity }} unidades</span>
+          <small>{{ (productById(item.productId)?.price || 0) | currency:'COP':'symbol-narrow':'1.0-0' }}</small>
+        </div>
+        <button type="button" class="icon-btn" (click)="cart.remove(item.productId)" aria-label="Quitar producto">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+      </div>
+    </div>
+    <ng-template #emptyCart>
+      <p class="muted">Tu carrito está vacío.</p>
+    </ng-template>
+    <footer>
+      <div class="subtotal">
+        <span>Subtotal</span>
+        <strong>{{ subtotal() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+      </div>
+      <button type="button" class="solid full" (click)="checkout()">Ir al checkout</button>
+    </footer>
+  </aside>
 </main>

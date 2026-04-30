@@ -7,14 +7,16 @@ import { Router } from '@angular/router';
 import { AuthService } from './services/auth.service';
 import { CartService } from './services/cart.service';
 import { CartUIService } from './services/cart-ui.service';
+import { AdminUIService } from './services/admin-ui.service';
 import { SessionService } from './services/session.service';
 import { CatalogService } from './services/catalog.service';
+import { AdminHubComponent } from './pages/admin-hub/admin-hub.component';
 import { Product } from './models/product';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, AdminHubComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
@@ -26,6 +28,7 @@ export class AppComponent {
     public readonly session: SessionService,
     public readonly cart: CartService,
     public readonly cartUI: CartUIService,
+    public readonly adminUI: AdminUIService,
     private readonly auth: AuthService,
     private readonly router: Router,
     private readonly catalog: CatalogService
