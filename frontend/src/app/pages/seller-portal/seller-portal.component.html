@@ -1,0 +1,157 @@
+<section class="page">
+  <div class="panel hero">
+    <div>
+      <a routerLink="/catalogo" class="back-link">← Volver al catálogo</a>
+      <p class="eyebrow">Portal del vendedor</p>
+      <h1>Gestiona tus publicaciones en ArquiXpress</h1>
+      <p class="muted">
+        Crea productos, actualiza precios, controla stock y retira publicaciones del catálogo cuando sea necesario.
+      </p>
+    </div>
+
+    <div class="seller-card">
+      <span>Sesión actual</span>
+      <strong>{{ session.currentUser()?.displayName || 'Vendedor demo' }}</strong>
+      <small>{{ session.currentUser()?.email || 'Sin correo cargado' }}</small>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <article class="metric-card">
+      <span>Publicaciones activas</span>
+      <strong>{{ activeProducts() }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>Unidades disponibles</span>
+      <strong>{{ totalUnits() }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>Valor inventario</span>
+      <strong>{{ inventoryValue() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+    </article>
+    <article class="metric-card warning">
+      <span>Stock bajo</span>
+      <strong>{{ lowStockProducts().length }}</strong>
+    </article>
+  </div>
+
+  <div *ngIf="error()" class="message error">{{ error() }}</div>
+  <div *ngIf="success()" class="message success">{{ success() }}</div>
+
+  <div class="layout">
+    <form class="panel form-card" (ngSubmit)="save()">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Producto</p>
+          <h2>{{ editingId() ? 'Editar producto' : 'Crear producto' }}</h2>
+        </div>
+        <button type="button" class="ghost" *ngIf="editingId()" (click)="cancelEdit()">
+          Cancelar edición
+        </button>
+      </div>
+
+      <label>
+        Título
+        <input name="title" [(ngModel)]="form.title" placeholder="Ej. Audífonos inalámbricos" required />
+      </label>
+
+      <label>
+        Descripción
+        <textarea name="description" [(ngModel)]="form.description" rows="4" placeholder="Describe el producto para el comprador" required></textarea>
+      </label>
+
+      <div class="field-grid">
+        <label>
+          Categoría
+          <select name="category" [(ngModel)]="form.category" required>
+            <option *ngFor="let category of categories" [value]="category">{{ category | titlecase }}</option>
+          </select>
+        </label>
+
+        <label>
+          Estado
+          <select name="status" [(ngModel)]="form.status" required>
+            <option value="ACTIVE">Publicado</option>
+            <option value="INACTIVE">Retirado</option>
+          </select>
+        </label>
+      </div>
+
+      <label>
+        URL de imagen
+        <input name="imageUrl" [(ngModel)]="form.imageUrl" placeholder="https://..." required />
+      </label>
+
+      <div class="field-grid">
+        <label>
+          Precio
+          <input name="price" type="number" min="1" step="100" [(ngModel)]="form.price" required />
+        </label>
+
+        <label>
+          Stock disponible
+          <input name="stockAvailable" type="number" min="0" step="1" [(ngModel)]="form.stockAvailable" required />
+        </label>
+      </div>
+
+      <button class="primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Guardando...' : (editingId() ? 'Guardar cambios' : 'Crear publicación') }}
+      </button>
+    </form>
+
+    <section class="panel products-panel">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Inventario</p>
+          <h2>Mis productos</h2>
+        </div>
+        <button type="button" class="ghost" (click)="loadProducts()">Actualizar</button>
+      </div>
+
+      <p *ngIf="loading()" class="muted">Cargando tus productos...</p>
+
+      <div *ngIf="!loading() && products().length === 0" class="empty">
+        <h3>Aún no tienes productos publicados</h3>
+        <p class="muted">Crea tu primera publicación desde el formulario.</p>
+      </div>
+
+      <article class="product-row" *ngFor="let product of products(); trackBy: trackById">
+        <img [src]="product.imageUrl" [alt]="product.title" />
+
+        <div class="product-info">
+          <div class="row-head">
+            <div>
+              <span class="tag">{{ product.category }}</span>
+              <h3>{{ product.title }}</h3>
+            </div>
+            <span class="status" [class.inactive]="product.status === 'INACTIVE'">
+              {{ product.status === 'INACTIVE' ? 'Retirado' : 'Publicado' }}
+            </span>
+          </div>
+
+          <p>{{ product.description }}</p>
+
+          <div class="product-meta">
+            <strong>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+            <span>Stock: {{ product.stockAvailable }}</span>
+            <span *ngIf="product.stockAvailable <= 5" class="low-stock">Stock bajo</span>
+          </div>
+
+          <div class="row-actions">
+            <button type="button" class="ghost" (click)="edit(product)">Editar</button>
+            <button type="button" class="ghost" (click)="toggleStatus(product)">
+              {{ product.status === 'INACTIVE' ? 'Publicar' : 'Retirar' }}
+            </button>
+            <label class="stock-control">
+              Nuevo stock
+              <input #stockInput type="number" min="0" [value]="product.stockAvailable" />
+            </label>
+            <button type="button" class="primary small" (click)="changeStock(product, stockInput.value)">
+              Actualizar stock
+            </button>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+</section>

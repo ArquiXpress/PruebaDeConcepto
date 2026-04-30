@@ -6,6 +6,7 @@ import { CheckoutPageComponent } from './pages/checkout-page/checkout-page.compo
 import { LoginPageComponent } from './pages/login-page/login-page.component';
 import { RegisterPageComponent } from './pages/register-page/register-page.component';
 import { OperationsPageComponent } from './pages/operations-page/operations-page.component';
+import { SellerPortalComponent } from './pages/seller-portal/seller-portal.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -15,4 +16,5 @@ export const routes: Routes = [
   { path: 'carrito', component: CartPageComponent },
   { path: 'checkout', component: CheckoutPageComponent },
   { path: 'operaciones', component: OperationsPageComponent },
+  { path: 'vendedor', component: SellerPortalComponent },
 ];

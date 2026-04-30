@@ -1,3 +1,5 @@
+export type ProductStatus = 'ACTIVE' | 'INACTIVE';
+
 export interface Product {
   id: string;
   sellerId: string;
@@ -7,4 +9,7 @@ export interface Product {
   imageUrl: string;
   price: number;
   stockAvailable: number;
+  status?: ProductStatus;
+  version?: number;
+  createdAt?: string;
 }

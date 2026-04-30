@@ -78,7 +78,7 @@ services:
     build: .
     container_name: arquixpress-api-1
     environment: &api_env
-      DB_URL: jdbc:postgresql://db-router:5432/arquixpress
+      DB_URL: jdbc:postgresql://postgres:5432/arquixpress
       DB_USERNAME: arquixpress
       DB_PASSWORD: arquixpress
       DB_DRIVER: org.postgresql.Driver
