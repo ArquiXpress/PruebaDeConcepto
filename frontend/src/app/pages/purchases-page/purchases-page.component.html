@@ -1,0 +1,27 @@
+<main class="page">
+  <section class="panel">
+    <div class="panel-head">
+      <h1>Mis compras</h1>
+      <a routerLink="/catalogo">Ir al catalogo</a>
+    </div>
+
+    <p class="muted" *ngIf="!session.isLoggedIn()">Inicia sesion para consultar tus compras.</p>
+    <p class="muted" *ngIf="loading">Cargando compras...</p>
+    <p class="error" *ngIf="error">{{ error }}</p>
+
+    <div class="orders" *ngIf="orders().length; else noOrders">
+      <article *ngFor="let order of orders()">
+        <strong>Orden {{ order.orderId }}</strong>
+        <span>{{ order.status }} | {{ order.shipmentStatus }}</span>
+        <span>{{ order.total | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+      </article>
+    </div>
+
+    <ng-template #noOrders>
+      <div class="empty" *ngIf="session.isLoggedIn() && !loading">
+        <h3>No tienes compras hechas</h3>
+        <p>Cuando completes tu primera compra, aparecera aqui.</p>
+      </div>
+    </ng-template>
+  </section>
+</main>

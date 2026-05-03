@@ -1,0 +1,40 @@
+<main class="product-page">
+  <a routerLink="/catalogo" class="back-link">Volver al catalogo</a>
+  <p class="muted" *ngIf="loading">Cargando producto...</p>
+  <p class="error" *ngIf="error">{{ error }}</p>
+
+  <section class="product-layout" *ngIf="product() as item">
+    <div class="gallery">
+      <div class="thumbs" *ngIf="productImages(item).length > 1">
+        <button type="button" *ngFor="let image of productImages(item)" (click)="selectImage(image)"
+          [class.active]="selectedImage() === image">
+          <img [src]="image" [alt]="item.title" />
+        </button>
+      </div>
+      <img class="main-image" [src]="selectedImage() || item.imageUrl" [alt]="item.title" />
+    </div>
+
+    <article class="product-info">
+      <span class="eyebrow">Nuevo | {{ item.category }}</span>
+      <h1>{{ item.title }}</h1>
+      <p class="rating">4.6 ★★★★★ (207)</p>
+      <strong class="price">{{ item.price | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+      <p class="installments">3 cuotas sin interes disponibles</p>
+      <div class="description">
+        <h2>Lo que tienes que saber de este producto</h2>
+        <p>{{ item.description }}</p>
+      </div>
+    </article>
+
+    <aside class="buy-box">
+      <strong class="shipping">Llega gratis mañana</strong>
+      <span>Mas detalles y formas de entrega</span>
+      <p>Stock disponible: {{ item.stockAvailable }}</p>
+      <button type="button" class="primary" (click)="cart.add(item.id)">Agregar al carrito</button>
+      <button type="button" class="secondary" (click)="favorites.toggle(item.id)">
+        {{ favorites.has(item.id) ? 'Quitar de favoritos' : 'Agregar a favoritos' }}
+      </button>
+      <small>Vendido por {{ item.sellerId || 'ArquiXpress' }}</small>
+    </aside>
+  </section>
+</main>

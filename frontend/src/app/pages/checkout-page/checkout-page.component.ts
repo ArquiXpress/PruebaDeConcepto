@@ -15,6 +15,7 @@ import { SessionService } from '../../services/session.service';
 export class CheckoutPageComponent implements OnInit {
   result = signal<CheckoutResponse | null>(null);
   loading = false;
+  guestPromptOpen = false;
 
   constructor(
     public readonly cart: CartService,
@@ -22,13 +23,19 @@ export class CheckoutPageComponent implements OnInit {
     public readonly session: SessionService
   ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.guestPromptOpen = !this.session.isLoggedIn();
+  }
 
   total(): number {
     return this.cart.items().reduce((sum, item) => sum + item.quantity, 0);
   }
 
   executeCheckout(): void {
+    if (!this.session.isLoggedIn()) {
+      this.guestPromptOpen = true;
+      return;
+    }
     const items = this.cart.items();
     if (!items.length) {
       return;

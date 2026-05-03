@@ -98,6 +98,41 @@
   padding: 24px;
 }
 
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 4px 12px;
+  cursor: pointer;
+}
+
+.admin-tabs button.active {
+  border-bottom-color: #2563eb;
+  color: #1f2937;
+}
+
+.admin-tabs span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+}
+
 .loading {
   padding: 32px;
   text-align: center;
@@ -143,6 +178,43 @@
   color: #4b5563;
 }
 
+.user-id {
+  max-width: 190px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  color: #6b7280;
+  word-break: break-all;
+}
+
+.message {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.message.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.message.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.empty {
+  padding: 32px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.empty h3 {
+  margin: 0 0 8px;
+  color: #1f2937;
+}
+
 .role-badge {
   display: inline-block;
   padding: 4px 10px;
@@ -171,6 +243,182 @@
   background: rgba(59, 130, 246, 0.15);
   border-color: rgba(59, 130, 246, 0.5);
   transform: translateY(-1px);
+}
+
+.edit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
+}
+
+.seller-applications {
+  display: grid;
+  gap: 16px;
+}
+
+.seller-application {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fff;
+}
+
+.application-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.application-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.application-title h3,
+.application-products h4 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.application-main p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.status-pill {
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.status-pill.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-pill.approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-pill.rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.application-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.approve-btn,
+.reject-btn {
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.approve-btn {
+  background: #16a34a;
+  color: #fff;
+}
+
+.reject-btn {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.approve-btn:disabled,
+.reject-btn:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.application-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.application-grid div {
+  border: 1px solid #edf0f4;
+  border-radius: 8px;
+  padding: 10px;
+  background: #f9fafb;
+}
+
+.application-grid span,
+.product-draft span {
+  display: block;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.application-grid strong {
+  display: block;
+  margin-top: 3px;
+  color: #1f2937;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.company-description,
+.review-note {
+  margin: 0 0 14px;
+  color: #4b5563;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.application-products {
+  display: grid;
+  gap: 10px;
+}
+
+.product-drafts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.product-draft {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 10px;
+  border: 1px solid #edf0f4;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.product-draft img {
+  width: 74px;
+  height: 74px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #f3f4f6;
+}
+
+.product-draft strong {
+  display: block;
+  color: #1f2937;
+  font-size: 13px;
+}
+
+.product-draft p {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .edit-roles-backdrop {
@@ -249,6 +497,12 @@
   padding: 8px 12px;
   background: #f3f4f6;
   border-radius: 6px;
+  display: grid;
+  gap: 2px;
+}
+
+.email-info strong {
+  color: #1f2937;
 }
 
 .roles-grid {
@@ -354,6 +608,15 @@
 
   .admin-content {
     padding: 16px;
+  }
+
+  .application-main {
+    display: grid;
+  }
+
+  .application-grid,
+  .product-drafts {
+    grid-template-columns: 1fr;
   }
 
   .edit-roles-modal {

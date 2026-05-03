@@ -70,6 +70,10 @@ public class CheckoutService {
         return OrderResponse.from(findOrder(orderId));
     }
 
+    public java.util.List<OrderResponse> getOrdersForBuyer(UUID buyerId) {
+        return orders.findByBuyerWithLines(buyerId).stream().map(OrderResponse::from).toList();
+    }
+
     public OrderResponse updateShipment(UUID orderId, ShipmentStatus next) {
         return tx.execute(status -> {
             OrderEntity order = findOrder(orderId);

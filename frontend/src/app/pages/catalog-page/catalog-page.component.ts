@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CatalogService, ProductPage } from '../../services/catalog.service';
 import { CartService } from '../../services/cart.service';
+import { FavoritesService } from '../../services/favorites.service';
 import { Product } from '../../models/product';
 
 const CATEGORIES = [
@@ -37,7 +38,8 @@ export class CatalogPageComponent implements OnInit {
   constructor(
     private readonly catalog: CatalogService,
     private readonly route: ActivatedRoute,
-    public readonly cart: CartService
+    public readonly cart: CartService,
+    public readonly favorites: FavoritesService
   ) {}
 
   ngOnInit(): void {
@@ -65,6 +67,10 @@ export class CatalogPageComponent implements OnInit {
 
   addToCart(product: Product): void {
     this.cart.add(product.id);
+  }
+
+  toggleFavorite(product: Product): void {
+    this.favorites.toggle(product.id);
   }
 
   trackById(_: number, product: Product): string {

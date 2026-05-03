@@ -27,4 +27,8 @@ export class CatalogService {
     params.set('size', String(size));
     return this.http.get<ProductPage>(`/api/products?${params.toString()}`);
   }
+
+  detail(id: string): Observable<Product> {
+    return this.http.get<Product>(`/api/products/${id}`);
+  }
 }

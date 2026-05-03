@@ -13,13 +13,39 @@ export interface LoginResponse {
   email: string;
   displayName: string;
   roles: string[];
+  avatarUrl?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  documentNumber?: string | null;
 }
 
 export interface RegisterRequest {
   email: string;
   password: string;
   displayName: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  documentNumber?: string;
+  avatarUrl?: string;
   roles?: string;
+}
+
+export interface ProfileUpdateRequest {
+  email: string;
+  displayName: string;
+  avatarUrl?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  documentNumber?: string;
+}
+
+export interface PasswordResetResponse {
+  accepted: boolean;
+  expiresAt: string;
+  message: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -37,6 +63,11 @@ export class AuthService {
           email: response.email,
           displayName: response.displayName,
           roles: response.roles as UserRole[],
+          avatarUrl: response.avatarUrl,
+          phone: response.phone,
+          address: response.address,
+          city: response.city,
+          documentNumber: response.documentNumber,
         };
         this.session.setUser(sessionUser);
         return response;
@@ -52,6 +83,11 @@ export class AuthService {
           email: response.email,
           displayName: response.displayName,
           roles: response.roles as UserRole[],
+          avatarUrl: response.avatarUrl,
+          phone: response.phone,
+          address: response.address,
+          city: response.city,
+          documentNumber: response.documentNumber,
         };
         this.session.setUser(sessionUser);
         return response;
@@ -67,6 +103,11 @@ export class AuthService {
           email: response.email,
           displayName: response.displayName,
           roles: response.roles as UserRole[],
+          avatarUrl: response.avatarUrl,
+          phone: response.phone,
+          address: response.address,
+          city: response.city,
+          documentNumber: response.documentNumber,
         };
         return response;
       })
@@ -75,5 +116,49 @@ export class AuthService {
 
   logout(): void {
     this.session.clear();
+  }
+
+  updateProfile(request: ProfileUpdateRequest) {
+    return this.http.put<LoginResponse>('/api/auth/profile', request).pipe(
+      map((response) => {
+        const sessionUser: SessionUser = {
+          id: response.id,
+          email: response.email,
+          displayName: response.displayName,
+          roles: response.roles as UserRole[],
+          avatarUrl: response.avatarUrl,
+          phone: response.phone,
+          address: response.address,
+          city: response.city,
+          documentNumber: response.documentNumber,
+        };
+        this.session.setUser(sessionUser);
+        return response;
+      })
+    );
+  }
+
+  requestPasswordReset(email: string) {
+    return this.http.post<PasswordResetResponse>('/api/auth/password-reset', { email });
+  }
+
+  confirmPasswordReset(token: string, newPassword: string) {
+    return this.http.post<LoginResponse>('/api/auth/password-reset/confirm', { token, newPassword }).pipe(
+      map((response) => {
+        const sessionUser: SessionUser = {
+          id: response.id,
+          email: response.email,
+          displayName: response.displayName,
+          roles: response.roles as UserRole[],
+          avatarUrl: response.avatarUrl,
+          phone: response.phone,
+          address: response.address,
+          city: response.city,
+          documentNumber: response.documentNumber,
+        };
+        this.session.setUser(sessionUser);
+        return response;
+      })
+    );
   }
 }

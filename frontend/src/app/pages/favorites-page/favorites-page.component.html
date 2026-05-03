@@ -1,0 +1,26 @@
+<main class="page">
+  <section class="panel">
+    <div class="panel-head">
+      <h1>Favoritos</h1>
+      <a routerLink="/catalogo">Explorar catalogo</a>
+    </div>
+
+    <div class="grid" *ngIf="products().length; else empty">
+      <article *ngFor="let product of products()">
+        <a [routerLink]="['/producto', product.id]">
+          <img [src]="product.imageUrl" [alt]="product.title" />
+        </a>
+        <strong>{{ product.title }}</strong>
+        <span>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+        <button type="button" (click)="cart.add(product.id)">Agregar al carrito</button>
+      </article>
+    </div>
+
+    <ng-template #empty>
+      <div class="empty">
+        <h3>No tienes favoritos</h3>
+        <p>Guarda productos desde el catalogo o desde el detalle del producto.</p>
+      </div>
+    </ng-template>
+  </section>
+</main>

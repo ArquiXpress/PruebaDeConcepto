@@ -1,11 +1,10 @@
 <div class="admin-modal-backdrop" (click)="adminUI.close()" *ngIf="adminUI.isOpen()"></div>
 
 <div class="admin-modal" *ngIf="adminUI.isOpen()">
-  <!-- Header -->
   <div class="admin-header">
     <div>
-      <h2>Gestión de Usuarios</h2>
-      <p class="admin-subtitle">Administra los roles de los usuarios del sistema</p>
+      <h2>Admin Hub</h2>
+      <p class="admin-subtitle">Consulta usuarios y asigna roles segun tu nivel de acceso</p>
     </div>
     <button type="button" class="close-btn" (click)="adminUI.close()" aria-label="Cerrar">
       <svg viewBox="0 0 24 24">
@@ -14,46 +13,156 @@
     </button>
   </div>
 
-  <!-- Content -->
   <div class="admin-content">
-    <div *ngIf="usersLoading" class="loading">Cargando usuarios...</div>
+    <p class="message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+    <p class="message success" *ngIf="successMessage()">{{ successMessage() }}</p>
 
-    <div class="users-table" *ngIf="users() && !usersLoading">
-      <table>
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Nombre</th>
-            <th>Roles</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let user of users()">
-            <td>{{ user.email }}</td>
-            <td>{{ user.displayName }}</td>
-            <td>
-              <span class="role-badge" *ngFor="let role of user.roles.split(',')">
-                {{ role.trim() }}
-              </span>
-            </td>
-            <td>
-              <button type="button" class="edit-btn" (click)="openEditModal(user)" title="Editar roles">
-                ✎ Editar
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN')" class="empty">
+      <h3>Acceso restringido</h3>
+      <p>Solo administradores y superadministradores pueden abrir este panel.</p>
     </div>
+
+    <ng-container *ngIf="session.isAdmin() || session.hasRole('SUPERADMIN')">
+      <div class="admin-tabs">
+        <button type="button" [class.active]="activeTab() === 'users'" (click)="activeTab.set('users')">
+          Usuarios
+        </button>
+        <button type="button" [class.active]="activeTab() === 'sellerApplications'"
+          (click)="activeTab.set('sellerApplications')">
+          Solicitudes de vendedores
+          <span *ngIf="pendingSellerApplications()">{{ pendingSellerApplications() }}</span>
+        </button>
+      </div>
+
+      <ng-container *ngIf="activeTab() === 'users'">
+        <div *ngIf="usersLoading" class="loading">Cargando usuarios...</div>
+
+        <div class="users-table" *ngIf="users().length && !usersLoading">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Nombre</th>
+                <th>Roles</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let user of users()">
+                <td class="user-id">{{ user.id }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.displayName }}</td>
+                <td>
+                  <span class="role-badge" *ngFor="let role of userRoles(user)">
+                    {{ role }}
+                  </span>
+                </td>
+                <td>
+                  <button type="button" class="edit-btn" (click)="openEditModal(user)"
+                    [disabled]="!canEditUser(user)" title="Editar roles">
+                    Editar
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="activeTab() === 'sellerApplications'">
+        <div *ngIf="sellerApplicationsLoading" class="loading">Cargando solicitudes...</div>
+
+        <div class="empty" *ngIf="!sellerApplicationsLoading && !sellerApplications().length">
+          <h3>No hay solicitudes</h3>
+          <p>Cuando un usuario quiera vender, su solicitud aparecera aqui.</p>
+        </div>
+
+        <div class="seller-applications" *ngIf="!sellerApplicationsLoading && sellerApplications().length">
+          <article class="seller-application" *ngFor="let application of sellerApplications()">
+            <div class="application-main">
+              <div>
+                <div class="application-title">
+                  <h3>{{ application.applicantName }}</h3>
+                  <span class="status-pill" [class.pending]="application.status === 'PENDING_REVIEW'"
+                    [class.approved]="application.status === 'APPROVED'"
+                    [class.rejected]="application.status === 'REJECTED'">
+                    {{ statusLabel(application.status) }}
+                  </span>
+                </div>
+                <p>{{ application.applicantEmail }}</p>
+              </div>
+              <div class="application-actions" *ngIf="application.status === 'PENDING_REVIEW'">
+                <button type="button" class="reject-btn" (click)="rejectSellerApplication(application)"
+                  [disabled]="reviewingApplicationId() === application.id">
+                  Rechazar
+                </button>
+                <button type="button" class="approve-btn" (click)="approveSellerApplication(application)"
+                  [disabled]="reviewingApplicationId() === application.id">
+                  Aprobar vendedor
+                </button>
+              </div>
+            </div>
+
+            <div class="application-grid">
+              <div>
+                <span>Tipo</span>
+                <strong>{{ application.sellerType === 'JURIDICA' ? 'Persona juridica' : 'Persona natural' }}</strong>
+              </div>
+              <div>
+                <span>Documento</span>
+                <strong>{{ application.legalDocumentType }} {{ application.legalDocumentNumber }}</strong>
+              </div>
+              <div>
+                <span>Archivo</span>
+                <strong>{{ application.documentFileName || 'Sin archivo' }}</strong>
+              </div>
+              <div>
+                <span>Categoria</span>
+                <strong>{{ application.category }}</strong>
+              </div>
+              <div *ngIf="application.companyName">
+                <span>Empresa</span>
+                <strong>{{ application.companyName }}</strong>
+              </div>
+              <div *ngIf="application.contactPhone">
+                <span>Telefono</span>
+                <strong>{{ application.contactPhone }}</strong>
+              </div>
+            </div>
+
+            <p class="company-description" *ngIf="application.companyDescription">
+              {{ application.companyDescription }}
+            </p>
+
+            <div class="application-products">
+              <h4>Productos propuestos</h4>
+              <div class="product-drafts">
+                <div class="product-draft" *ngFor="let product of application.products">
+                  <img [src]="product.imageUrls?.[0] || product.imageUrl" [alt]="product.title" />
+                  <div>
+                    <strong>{{ product.title }}</strong>
+                    <span>${{ product.price | number:'1.0-0' }} · Stock {{ product.stockAvailable }} · {{ product.imageUrls?.length || 1 }} foto(s)</span>
+                    <p>{{ product.description }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p class="review-note" *ngIf="application.reviewNote">
+              Revision: {{ application.reviewNote }}
+            </p>
+          </article>
+        </div>
+      </ng-container>
+    </ng-container>
   </div>
 </div>
 
-<!-- Edit Roles Modal -->
 <div class="edit-roles-backdrop" (click)="closeEditModal()" *ngIf="editModalOpen()"></div>
 <div class="edit-roles-modal" *ngIf="editModalOpen()">
   <div class="modal-header">
-    <h3>Editar Roles - {{ editingUser()?.displayName }}</h3>
+    <h3>Editar roles</h3>
     <button type="button" class="close-btn" (click)="closeEditModal()" aria-label="Cerrar">
       <svg viewBox="0 0 24 24">
         <path d="M18 6 6 18M6 6 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -62,17 +171,20 @@
   </div>
 
   <div class="modal-content">
-    <div class="email-info">{{ editingUser()?.email }}</div>
+    <div class="email-info">
+      <strong>{{ editingUser()?.displayName }}</strong>
+      <span>{{ editingUser()?.email }}</span>
+    </div>
 
     <div class="roles-grid">
-      <label class="role-checkbox" *ngFor="let role of availableRoles">
+      <label class="role-checkbox" *ngFor="let role of availableRoles()">
         <input type="checkbox" [checked]="hasRole(role)" (change)="toggleRole(role)" />
         <span class="checkbox-label">
           <strong>{{ role }}</strong>
-          <small *ngIf="role === 'ADMIN'">Acceso total al panel</small>
+          <small *ngIf="role === 'ADMIN'">Administrador operativo sin permiso para asignar roles</small>
           <small *ngIf="role === 'CLIENT'">Comprador normal</small>
           <small *ngIf="role === 'SELLER'">Puede vender productos</small>
-          <small *ngIf="role === 'LOGISTICS'">Gestión de entregas</small>
+          <small *ngIf="role === 'LOGISTICS'">Gestion de entregas</small>
         </span>
       </label>
     </div>
@@ -80,6 +192,6 @@
 
   <div class="modal-footer">
     <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancelar</button>
-    <button type="button" class="btn-save" (click)="saveUserRoles()">Guardar Cambios</button>
+    <button type="button" class="btn-save" (click)="saveUserRoles()">Guardar cambios</button>
   </div>
 </div>

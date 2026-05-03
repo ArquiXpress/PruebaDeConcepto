@@ -15,5 +15,11 @@
     <article class="result" *ngIf="result() as checkoutResult">
       <pre>{{ checkoutResult | json }}</pre>
     </article>
+
+    <div class="guest-box" *ngIf="guestPromptOpen">
+      <h2>Inicia sesion</h2>
+      <p>Inicia sesion para acceder a todos los beneficios de ArquiExpress.</p>
+      <a class="primary-link" routerLink="/login">Ir al login</a>
+    </div>
   </section>
 </main>

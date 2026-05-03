@@ -19,9 +19,11 @@
 
     <div class="product-grid" *ngIf="page()?.content?.length; else emptyState">
       <article class="product-card" *ngFor="let product of page()?.content; trackBy: trackById">
-        <img class="product-image" [src]="product.imageUrl" [alt]="product.title" />
+        <a [routerLink]="['/producto', product.id]">
+          <img class="product-image" [src]="product.imageUrl" [alt]="product.title" />
+        </a>
         <div class="tag">{{ product.category }}</div>
-        <h3>{{ product.title }}</h3>
+        <h3><a [routerLink]="['/producto', product.id]">{{ product.title }}</a></h3>
         <p>{{ product.description }}</p>
         <div class="meta">
           <strong>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
@@ -29,6 +31,9 @@
         </div>
         <div class="actions">
           <button type="button" (click)="addToCart(product)">Agregar</button>
+          <button type="button" class="ghost" (click)="toggleFavorite(product)">
+            {{ favorites.has(product.id) ? 'Quitar favorito' : 'Favorito' }}
+          </button>
           <span class="muted">En carrito: {{ cart.quantityFor(product.id) }}</span>
         </div>
       </article>

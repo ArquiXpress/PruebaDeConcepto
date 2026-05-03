@@ -17,8 +17,9 @@
         <input [(ngModel)]="password" type="password" />
       </label>
       <button type="button" class="primary" (click)="submit()" [disabled]="loading">
-        {{ loading ? 'Entrando...' : 'Iniciar sesión' }}
+        {{ loading ? 'Entrando...' : 'Iniciar sesion' }}
       </button>
+      <a routerLink="/recuperar-clave">Olvide mi clave</a>
       <p class="error" *ngIf="error">{{ error }}</p>
     </div>
   </section>

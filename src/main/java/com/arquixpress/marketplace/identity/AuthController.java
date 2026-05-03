@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,6 +29,21 @@ public class AuthController {
     @PostMapping("/register")
     public LoginResponse register(@Valid @RequestBody RegisterRequest request) {
         return LoginResponse.from(authService.register(request));
+    }
+
+    @PutMapping("/profile")
+    public LoginResponse updateProfile(@Valid @RequestBody ProfileUpdateRequest request, HttpServletRequest http) {
+        return LoginResponse.from(authService.updateProfile(CurrentUser.from(http), request));
+    }
+
+    @PostMapping("/password-reset")
+    public PasswordResetResponse requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        return authService.requestPasswordReset(request);
+    }
+
+    @PostMapping("/password-reset/confirm")
+    public LoginResponse confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        return LoginResponse.from(authService.confirmPasswordReset(request));
     }
 
     @PostMapping("/operators")

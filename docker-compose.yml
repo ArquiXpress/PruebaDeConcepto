@@ -93,10 +93,19 @@ services:
       PAYMENT_TIMEOUT_RATE: "0.02"
       PAYMENT_MIN_LATENCY_MS: "30"
       PAYMENT_MAX_LATENCY_MS: "180"
+      APP_MAIL_ENABLED: "true"
+      APP_MAIL_FROM: no-reply@arquixpress.com
+      APP_RESET_BASE_URL: http://localhost:4200/recuperar-clave
+      MAIL_HOST: mailpit
+      MAIL_PORT: "1025"
+      MAIL_SMTP_AUTH: "false"
+      MAIL_SMTP_STARTTLS: "false"
     expose:
       - "8080"
     depends_on:
       db-router:
+        condition: service_started
+      mailpit:
         condition: service_started
 
   api-2:
@@ -121,6 +130,14 @@ services:
     depends_on:
       - api-1
       - api-2
+
+  mailpit:
+    image: axllent/mailpit:v1.24
+    container_name: arquixpress-mailpit
+    ports:
+      - "8025:8025"
+    expose:
+      - "1025"
 
   frontend:
     build:

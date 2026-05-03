@@ -23,6 +23,7 @@ import { Product } from './models/product';
 export class AppComponent {
   searchTerm = '';
   productCache = signal<Map<string, Product>>(new Map());
+  guestPromptOpen = signal(false);
 
   constructor(
     public readonly session: SessionService,
@@ -59,8 +60,34 @@ export class AppComponent {
   }
 
   checkout(): void {
+    if (!this.session.isLoggedIn()) {
+      this.showGuestPrompt();
+      return;
+    }
     this.cartUI.close();
     this.router.navigateByUrl('/checkout');
+  }
+
+  showGuestPrompt(): void {
+    this.guestPromptOpen.set(true);
+  }
+
+  closeGuestPrompt(): void {
+    this.guestPromptOpen.set(false);
+  }
+
+  goToLogin(): void {
+    this.closeGuestPrompt();
+    this.router.navigateByUrl('/login');
+  }
+
+  openCart(): void {
+    this.cartUI.toggle();
+  }
+
+  userAddress(): string {
+    const address = this.session.currentUser()?.address?.trim();
+    return address || 'Agrega tu direccion';
   }
 
   search(): void {
@@ -72,5 +99,7 @@ export class AppComponent {
 
   logout(): void {
     this.auth.logout();
+    this.cart.clear();
+    this.cartUI.close();
   }
 }

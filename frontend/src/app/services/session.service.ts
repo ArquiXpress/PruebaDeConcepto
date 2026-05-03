@@ -9,6 +9,11 @@ export interface SessionUser {
   email: string;
   displayName: string;
   roles: UserRole[];
+  avatarUrl?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  documentNumber?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

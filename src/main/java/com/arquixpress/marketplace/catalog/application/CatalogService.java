@@ -77,7 +77,7 @@ public class CatalogService {
 
     private Page<ProductSummary> searchReplica(String normalizedQuery, String normalizedCategory, Pageable pageable) {
         StringBuilder sql = new StringBuilder("""
-                select id, title, category, image_url, price, stock_available
+                select id, seller_id, title, description, category, image_url, image_urls, price, stock_available
                   from product
                  where status = 'ACTIVE'
                 """);
@@ -95,9 +95,12 @@ public class CatalogService {
         sql.append(" order by created_at desc limit :limit offset :offset");
         var rows = catalogReadReplica.query(sql.toString(), params, (rs, rowNum) -> new ProductSummary(
                 UUID.fromString(rs.getString("id")),
+                UUID.fromString(rs.getString("seller_id")),
                 rs.getString("title"),
+                rs.getString("description"),
                 rs.getString("category"),
                 rs.getString("image_url"),
+                ProductSummary.parseImages(rs.getString("image_urls"), rs.getString("image_url")),
                 rs.getBigDecimal("price"),
                 rs.getInt("stock_available")));
         return new PageImpl<>(rows, pageable, rows.size());
@@ -105,15 +108,18 @@ public class CatalogService {
 
     private ProductSummary detailReplica(UUID id) {
         var rows = catalogReadReplica.query("""
-                select id, title, category, image_url, price, stock_available
+                select id, seller_id, title, description, category, image_url, image_urls, price, stock_available
                   from product
                  where id = :id
                    and status = 'ACTIVE'
                 """, new MapSqlParameterSource("id", id), (rs, rowNum) -> new ProductSummary(
                 UUID.fromString(rs.getString("id")),
+                UUID.fromString(rs.getString("seller_id")),
                 rs.getString("title"),
+                rs.getString("description"),
                 rs.getString("category"),
                 rs.getString("image_url"),
+                ProductSummary.parseImages(rs.getString("image_urls"), rs.getString("image_url")),
                 rs.getBigDecimal("price"),
                 rs.getInt("stock_available")));
         if (rows.isEmpty()) {

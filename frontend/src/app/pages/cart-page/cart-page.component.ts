@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { CatalogService } from '../../services/catalog.service';
 import { Product } from '../../models/product';
+import { SessionService } from '../../services/session.service';
 
 @Component({
   selector: 'app-cart-page',
@@ -17,7 +18,8 @@ export class CartPageComponent implements OnInit {
 
   constructor(
     public readonly cart: CartService,
-    private readonly catalog: CatalogService
+    private readonly catalog: CatalogService,
+    public readonly session: SessionService
   ) {}
 
   ngOnInit(): void {

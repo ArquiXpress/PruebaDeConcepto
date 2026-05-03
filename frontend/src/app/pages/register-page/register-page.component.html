@@ -5,12 +5,16 @@
       <a routerLink="/login">Ya tengo cuenta</a>
     </div>
 
-    <p class="muted">Regístrate para comprar, vender o administrar el marketplace.</p>
+    <p class="muted">Registrate para comprar, vender o administrar el marketplace.</p>
 
     <div class="form">
       <label>
         Nombre visible
         <input [(ngModel)]="displayName" type="text" />
+      </label>
+      <label>
+        Telefono
+        <input [(ngModel)]="phone" type="tel" />
       </label>
       <label>
         Email
@@ -19,6 +23,22 @@
       <label>
         Clave
         <input [(ngModel)]="password" type="password" />
+      </label>
+      <label>
+        Direccion
+        <input [(ngModel)]="address" type="text" />
+      </label>
+      <label>
+        Ciudad
+        <input [(ngModel)]="city" type="text" />
+      </label>
+      <label>
+        Documento
+        <input [(ngModel)]="documentNumber" type="text" />
+      </label>
+      <label>
+        Foto de perfil
+        <input [(ngModel)]="avatarUrl" type="url" placeholder="URL de imagen" />
       </label>
       <button type="button" class="primary" (click)="submit()" [disabled]="loading">
         {{ loading ? 'Creando...' : 'Registrarme' }}

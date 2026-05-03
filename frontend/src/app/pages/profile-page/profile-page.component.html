@@ -1,0 +1,61 @@
+<main class="page">
+  <section class="panel" *ngIf="session.currentUser(); else guest">
+    <div class="panel-head">
+      <h1>Mi perfil</h1>
+      <a routerLink="/">Volver</a>
+    </div>
+
+    <div class="profile-preview">
+      <img [src]="avatarUrl || 'assets/brand/logo.png'" alt="Foto de perfil" />
+      <div>
+        <strong>{{ displayName || 'Usuario' }}</strong>
+        <span>{{ email }}</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <label>
+        Nombre visible
+        <input [(ngModel)]="displayName" type="text" />
+      </label>
+      <label>
+        Email
+        <input [(ngModel)]="email" type="email" />
+      </label>
+      <label>
+        Foto de perfil
+        <input [(ngModel)]="avatarUrl" type="url" placeholder="URL de imagen" />
+      </label>
+      <label>
+        Telefono
+        <input [(ngModel)]="phone" type="tel" />
+      </label>
+      <label>
+        Direccion
+        <input [(ngModel)]="address" type="text" />
+      </label>
+      <label>
+        Ciudad
+        <input [(ngModel)]="city" type="text" />
+      </label>
+      <label>
+        Documento
+        <input [(ngModel)]="documentNumber" type="text" />
+      </label>
+
+      <button type="button" class="primary" (click)="save()" [disabled]="loading">
+        {{ loading ? 'Guardando...' : 'Guardar perfil' }}
+      </button>
+      <p class="success" *ngIf="success">{{ success }}</p>
+      <p class="error" *ngIf="error">{{ error }}</p>
+    </div>
+  </section>
+
+  <ng-template #guest>
+    <section class="panel">
+      <h1>Mi perfil</h1>
+      <p class="muted">Inicia sesion para editar tus datos.</p>
+      <a routerLink="/login">Ir al login</a>
+    </section>
+  </ng-template>
+</main>

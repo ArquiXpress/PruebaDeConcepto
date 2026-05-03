@@ -8,47 +8,29 @@
       </span>
     </a>
 
-    <nav class="category-nav" aria-label="Categorías principales">
-      <a routerLink="/catalogo" [queryParams]="{ category: 'tecnologia' }" aria-label="Tecnología">
-        <span class="nav-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M4 7h16v10H4z" fill="none" stroke="currentColor" stroke-width="1.7" />
-            <path d="M8 19h8" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
-        </span>
-      </a>
-      <a routerLink="/catalogo" [queryParams]="{ category: 'hogar' }" aria-label="Hogar">
-        <span class="nav-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M4 11.5 12 4l8 7.5V20H4z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
-        </span>
-      </a>
-      <a routerLink="/catalogo" [queryParams]="{ category: 'gaming' }" aria-label="Gaming">
-        <span class="nav-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M6 14a4 4 0 0 1 8 0h4a2 2 0 0 1 0 4h-3l-2 2H11l-2-2H6a2 2 0 0 1 0-4Z" fill="none"
-              stroke="currentColor" stroke-width="1.7" />
-            <circle cx="9" cy="14" r="1" />
-            <circle cx="15" cy="14" r="1" /></svg>
-        </span>
-      </a>
-      <a routerLink="/catalogo" [queryParams]="{ category: 'moda' }" aria-label="Moda">
-        <span class="nav-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M7 5h10l2 4-3 2v8H8v-8L5 9z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
-        </span>
-      </a>
-      <a *ngIf="session.canAccessOperations()" routerLink="/operaciones" aria-label="Operaciones">
-        <span class="nav-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M5 7h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.7" />
-            <path d="M8 10h8M8 13h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
-        </span>
-      </a>
+    <div class="delivery-target" *ngIf="session.currentUser() as user; else guestDelivery">
+      <span>Enviar a {{ user.displayName }}</span>
+      <small>{{ userAddress() }}</small>
+    </div>
+    <ng-template #guestDelivery>
+      <button type="button" class="delivery-target linklike" (click)="showGuestPrompt()">
+        <span>Ingresa tu direccion</span>
+        <small>Recibe ofertas cerca de ti</small>
+      </button>
+    </ng-template>
+
+    <nav class="main-nav" aria-label="Navegacion principal">
+      <a routerLink="/catalogo">Categorias</a>
+      <a routerLink="/catalogo" [queryParams]="{ oferta: true }">Ofertas</a>
+      <a routerLink="/catalogo" [queryParams]="{ cupones: true }">Cupones</a>
+      <a routerLink="/operaciones">Vender</a>
+      <a routerLink="/catalogo" [queryParams]="{ ayuda: 'pqr' }">Ayuda/PQR</a>
+      <a *ngIf="session.canAccessOperations()" routerLink="/operaciones">Operaciones</a>
     </nav>
 
     <form class="topbar-search" (ngSubmit)="search()">
       <input name="searchTerm" [(ngModel)]="searchTerm" type="search"
-        placeholder="Buscar productos, marcas o categorías" aria-label="Buscar productos" />
+        placeholder="Buscar productos, marcas o categorias" aria-label="Buscar productos" />
       <button type="submit" aria-label="Buscar">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
@@ -57,50 +39,32 @@
       </button>
     </form>
 
-    <div class="topbar-actions">
-      <button *ngIf="session.isAdmin()" class="admin-pill" type="button" (click)="adminUI.open()"
-        aria-label="Panel de Admin">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"
-            fill="currentColor" />
-        </svg>
-        <span>Admin</span>
-      </button>
-      <button class="cart-pill" type="button" (click)="cartUI.toggle()" aria-label="Carrito">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 6h15l-1.5 8h-11z" fill="none" stroke="currentColor" stroke-width="1.8" />
-          <circle cx="9" cy="20" r="1.4" fill="currentColor" />
-          <circle cx="18" cy="20" r="1.4" fill="currentColor" />
-          <path d="M3 3h2l2 11h11" fill="none" stroke="currentColor" stroke-width="1.8" />
-        </svg>
-        <span class="counter">{{ cart.count() }}</span>
-      </button>
-      <span class="session-pill" *ngIf="session.currentUser() as user; else guestState">
-        {{ user.displayName }}
-      </span>
-      <ng-template #guestState>
-        <span class="session-pill muted">Invitado</span>
-      </ng-template>
-      <a class="login-btn" *ngIf="!session.isLoggedIn(); else logoutBtn" routerLink="/login" aria-label="Login">
-        <svg viewBox="0 0 24 24" class="action-icon" aria-hidden="true">
-          <path d="M10 6h6v12h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-          <path d="M13 12H4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-          <path d="m7 9 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-            stroke-linejoin="round" />
-        </svg>
-      </a>
-      <ng-template #logoutBtn>
-        <button class="login-btn" type="button" (click)="logout()" aria-label="Cerrar sesión">
-          <svg viewBox="0 0 24 24" class="action-icon" aria-hidden="true">
-            <path d="M10 6h6v12h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-            <path d="M13 12H4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-            <path d="m7 9 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-              stroke-linejoin="round" />
-          </svg>
+    <nav class="account-nav" aria-label="Cuenta y compras">
+      <ng-container *ngIf="session.isLoggedIn(); else guestActions">
+        <a routerLink="/perfil">Mi perfil</a>
+        <a routerLink="/mis-compras">Mis compras</a>
+        <a routerLink="/favoritos">Favoritos</a>
+        <button class="cart-link" type="button" (click)="openCart()">
+          Carrito
+          <span class="counter">{{ cart.count() }}</span>
+        </button>
+        <button *ngIf="session.isAdmin() || session.hasRole('SUPERADMIN')" class="admin-pill" type="button"
+          (click)="adminUI.open()" aria-label="Panel de Admin">
+          Admin
+        </button>
+        <button class="logout-link" type="button" (click)="logout()">Salir</button>
+      </ng-container>
+
+      <ng-template #guestActions>
+        <a routerLink="/registro">Crea tu cuenta</a>
+        <a routerLink="/login">Ingresa</a>
+        <button type="button" (click)="showGuestPrompt()">Mis compras</button>
+        <button class="cart-link" type="button" (click)="openCart()">
+          Carrito
+          <span class="counter">{{ cart.count() }}</span>
         </button>
       </ng-template>
-    </div>
+    </nav>
   </header>
 
   <router-outlet />
@@ -130,7 +94,7 @@
       </div>
     </div>
     <ng-template #emptyCart>
-      <p class="muted">Tu carrito está vacío.</p>
+      <p class="muted">Tu carrito esta vacio.</p>
     </ng-template>
     <footer>
       <div class="subtotal">
@@ -140,6 +104,17 @@
       <button type="button" class="solid full" (click)="cartUI.close(); checkout()">Ir al checkout</button>
     </footer>
   </aside>
+
+  <div class="guest-prompt-backdrop" *ngIf="guestPromptOpen()" (click)="closeGuestPrompt()"></div>
+  <section class="guest-prompt" *ngIf="guestPromptOpen()" role="dialog" aria-modal="true">
+    <button type="button" class="icon-btn close-prompt" (click)="closeGuestPrompt()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24">
+        <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" /></svg>
+    </button>
+    <h2>Inicia sesion</h2>
+    <p>Inicia sesion para acceder a todos los beneficios de ArquiExpress.</p>
+    <button type="button" class="solid full" (click)="goToLogin()">Ir al login</button>
+  </section>
 
   <app-admin-hub></app-admin-hub>
 </div>

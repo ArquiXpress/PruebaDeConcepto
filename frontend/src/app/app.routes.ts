@@ -6,12 +6,22 @@ import { CheckoutPageComponent } from './pages/checkout-page/checkout-page.compo
 import { LoginPageComponent } from './pages/login-page/login-page.component';
 import { RegisterPageComponent } from './pages/register-page/register-page.component';
 import { OperationsPageComponent } from './pages/operations-page/operations-page.component';
+import { PasswordRecoveryPageComponent } from './pages/password-recovery-page/password-recovery-page.component';
+import { ProfilePageComponent } from './pages/profile-page/profile-page.component';
+import { ProductDetailPageComponent } from './pages/product-detail-page/product-detail-page.component';
+import { PurchasesPageComponent } from './pages/purchases-page/purchases-page.component';
+import { FavoritesPageComponent } from './pages/favorites-page/favorites-page.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginPageComponent },
   { path: 'registro', component: RegisterPageComponent },
+  { path: 'recuperar-clave', component: PasswordRecoveryPageComponent },
+  { path: 'perfil', component: ProfilePageComponent },
+  { path: 'mis-compras', component: PurchasesPageComponent },
+  { path: 'favoritos', component: FavoritesPageComponent },
   { path: 'catalogo', component: CatalogPageComponent },
+  { path: 'producto/:id', component: ProductDetailPageComponent },
   { path: 'carrito', component: CartPageComponent },
   { path: 'checkout', component: CheckoutPageComponent },
   { path: 'operaciones', component: OperationsPageComponent },

@@ -15,6 +15,11 @@ export class RegisterPageComponent {
   displayName = '';
   email = '';
   password = '';
+  phone = '';
+  address = '';
+  city = '';
+  documentNumber = '';
+  avatarUrl = '';
   loading = false;
   error = '';
 
@@ -26,7 +31,16 @@ export class RegisterPageComponent {
   submit(): void {
     this.loading = true;
     this.error = '';
-    this.auth.register({ displayName: this.displayName, email: this.email, password: this.password }).subscribe({
+    this.auth.register({
+      displayName: this.displayName,
+      email: this.email,
+      password: this.password,
+      phone: this.phone,
+      address: this.address,
+      city: this.city,
+      documentNumber: this.documentNumber,
+      avatarUrl: this.avatarUrl,
+    }).subscribe({
       next: () => {
         this.loading = false;
         this.router.navigateByUrl('/');
