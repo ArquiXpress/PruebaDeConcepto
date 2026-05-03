@@ -3,12 +3,24 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CartItem } from '../models/cart-item';
 
+export interface CheckoutProduct {
+  productId: string;
+  title: string;
+  imageUrl: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
 export interface CheckoutResponse {
   orderId: string;
   orderStatus: string;
   shipmentStatus: string;
   paymentStatus: string;
+  paymentMethod: string;
+  transactionId: string;
   total: number;
+  items: CheckoutProduct[];
   message: string;
 }
 
@@ -16,15 +28,13 @@ export interface CheckoutResponse {
 export class CheckoutService {
   constructor(private readonly http: HttpClient) {}
 
-  checkout(items: CartItem[], userId: string, roles: string[]): Observable<CheckoutResponse> {
+  checkout(items: CartItem[], paymentMethod: string): Observable<CheckoutResponse> {
     return this.http.post<CheckoutResponse>(
       '/api/checkout',
-      { items },
+      { items, paymentMethod },
       {
         headers: new HttpHeaders({
           'Content-Type': 'application/json',
-          'X-User-Id': userId,
-          'X-Roles': roles.join(','),
           'Idempotency-Key': `ui-${Date.now()}`,
         }),
       }

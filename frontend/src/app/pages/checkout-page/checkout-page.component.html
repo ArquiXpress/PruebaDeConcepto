@@ -5,15 +5,129 @@
       <a routerLink="/carrito">Volver al carrito</a>
     </div>
 
-    <p class="muted">Usuario activo: {{ session.currentUser()?.displayName }} ({{ session.currentUser()?.roles?.join(', ') || 'Sin rol' }})</p>
-    <p class="muted">Items en carrito: {{ total() }}</p>
+    <div class="layout">
+      <div class="checkout-card">
+        <p class="muted">
+          Usuario activo:
+          {{ session.currentUser()?.displayName || 'Invitado demo' }}
+          ({{ session.currentUser()?.roles?.join(', ') || 'CLIENT' }})
+        </p>
+        <p class="muted">Productos en carrito: {{ itemCount() }}</p>
 
-    <button type="button" class="primary" (click)="executeCheckout()" [disabled]="loading || !cart.items().length">
-      {{ loading ? 'Procesando...' : 'Confirmar checkout' }}
-    </button>
+        <div class="payment-block">
+          <label for="paymentMethod">Metodo de pago</label>
+          <select id="paymentMethod" [(ngModel)]="selectedPaymentMethod">
+            <option *ngFor="let option of paymentMethodOptions" [ngValue]="option">{{ option }}</option>
+          </select>
+
+          <input
+            *ngIf="isCustomPaymentMethod()"
+            type="text"
+            [(ngModel)]="customPaymentMethod"
+            placeholder="Escribe el metodo de pago"
+            maxlength="80" />
+        </div>
+
+        <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+        <button type="button" class="primary" (click)="executeCheckout()" [disabled]="loading || !cart.items().length">
+          {{ loading ? 'Procesando...' : 'Confirmar checkout' }}
+        </button>
+      </div>
+
+      <aside class="summary-card">
+        <h2>Resumen del pedido</h2>
+
+        <div class="summary-list" *ngIf="cart.items().length; else emptyState">
+          <article class="summary-item" *ngFor="let item of cart.items()">
+            <img
+              *ngIf="product(item.productId)?.imageUrl"
+              [src]="product(item.productId)?.imageUrl"
+              [alt]="product(item.productId)?.title || item.productId" />
+            <div class="summary-copy">
+              <strong>{{ product(item.productId)?.title || item.productId }}</strong>
+              <span>{{ item.quantity }} unidad(es)</span>
+            </div>
+            <strong>{{ ((product(item.productId)?.price || 0) * item.quantity) | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          </article>
+        </div>
+
+        <ng-template #emptyState>
+          <div class="empty">
+            <h3>No hay productos listos para pagar</h3>
+            <p>Agrega productos desde el catálogo o vuelve al carrito para ajustar la compra.</p>
+          </div>
+        </ng-template>
+
+        <div class="summary-total">
+          <span>Total estimado</span>
+          <strong>{{ subtotal() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+      </aside>
+    </div>
 
     <article class="result" *ngIf="result() as checkoutResult">
-      <pre>{{ checkoutResult | json }}</pre>
+      <div class="result-head">
+        <div>
+          <p class="eyebrow">Resultado del checkout</p>
+          <h2>Compra registrada</h2>
+        </div>
+        <span class="status-pill" [ngClass]="statusClass(checkoutResult.paymentStatus)">
+          {{ formatStatus(checkoutResult.paymentStatus) }}
+        </span>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-card">
+          <span>Order ID</span>
+          <strong>{{ checkoutResult.orderId }}</strong>
+        </div>
+        <div class="result-card">
+          <span>Transaction ID</span>
+          <strong>{{ checkoutResult.transactionId }}</strong>
+        </div>
+        <div class="result-card">
+          <span>Metodo de pago</span>
+          <strong>{{ checkoutResult.paymentMethod }}</strong>
+        </div>
+        <div class="result-card">
+          <span>Total pagado</span>
+          <strong>{{ checkoutResult.total | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+      </div>
+
+      <div class="status-row">
+        <div class="status-detail">
+          <span>Estado del pedido</span>
+          <strong class="status-pill" [ngClass]="statusClass(checkoutResult.orderStatus)">
+            {{ formatStatus(checkoutResult.orderStatus) }}
+          </strong>
+        </div>
+        <div class="status-detail">
+          <span>Estado logístico</span>
+          <strong class="status-pill" [ngClass]="statusClass(checkoutResult.shipmentStatus)">
+            {{ formatStatus(checkoutResult.shipmentStatus) }}
+          </strong>
+        </div>
+      </div>
+
+      <p class="message">{{ checkoutResult.message }}</p>
+
+      <div class="result-products">
+        <h3>Productos comprados</h3>
+        <article class="result-product" *ngFor="let item of checkoutResult.items">
+          <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.title" />
+          <div class="result-copy">
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.quantity }} unidad(es)</span>
+            <small>ID producto: {{ item.productId }}</small>
+          </div>
+          <div class="result-pricing">
+            <span>{{ item.unitPrice | currency:'COP':'symbol-narrow':'1.0-0' }} c/u</span>
+            <strong>{{ item.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          </div>
+        </article>
+      </div>
     </article>
   </section>
 </main>
