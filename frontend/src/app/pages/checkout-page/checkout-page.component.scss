@@ -50,15 +50,36 @@
   margin-top: 20px;
 }
 
+.payment-form {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(15, 76, 129, 0.04);
+}
+
+.payment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.payment-form label {
+  display: grid;
+  gap: 8px;
+}
+
 .payment-block label,
 .summary-card h2,
-.result-products h3 {
+.result-products h3,
+.payment-summary h3 {
   font-size: 0.95rem;
   font-weight: 700;
 }
 
 .payment-block select,
-.payment-block input {
+.payment-block input,
+.payment-block textarea {
   width: 100%;
   min-height: 48px;
   border-radius: 16px;
@@ -66,6 +87,50 @@
   padding: 0 14px;
   background: #fff;
   color: #12304a;
+}
+
+.payment-block textarea {
+  min-height: 110px;
+  padding: 14px;
+  resize: vertical;
+}
+
+.helper {
+  margin: 0;
+  color: #4e6882;
+  font-size: 0.88rem;
+}
+
+.account-card {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #12304a, #0f4c81);
+  color: #fff;
+}
+
+.account-number {
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+}
+
+.account-card .eyebrow {
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 2px;
+}
+
+.check-row {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 10px;
+  color: #244966;
+}
+
+.check-row input {
+  width: 18px;
+  min-height: 18px;
+  margin-top: 2px;
 }
 
 .primary,
@@ -238,6 +303,30 @@ a {
   color: #244966;
 }
 
+.payment-summary {
+  margin: 0 0 22px;
+}
+
+.payment-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-detail-card {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(18, 48, 74, 0.08);
+}
+
+.summary-detail-card span {
+  display: block;
+  color: #5d748b;
+  font-size: 0.84rem;
+  margin-bottom: 6px;
+}
+
 .result-pricing {
   display: grid;
   gap: 4px;
@@ -261,7 +350,9 @@ a {
   }
 
   .layout,
-  .result-grid {
+  .result-grid,
+  .payment-grid,
+  .payment-summary-grid {
     grid-template-columns: 1fr;
   }
 
