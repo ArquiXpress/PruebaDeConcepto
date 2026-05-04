@@ -28,4 +28,17 @@ export class FavoritesPageComponent implements OnInit {
       this.products.set(page.content.filter((product) => ids.has(product.id)));
     });
   }
+
+  addToCart(product: Product, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.cart.add(product.id);
+  }
+
+  toggleFavorite(product: Product, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.favorites.toggle(product.id);
+    this.products.set(this.products().filter((item) => item.id !== product.id));
+  }
 }

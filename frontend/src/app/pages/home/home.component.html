@@ -5,35 +5,39 @@
       <h1>Compra, vende y descubre sin complicarte</h1>
       <p class="lead">Un marketplace modular con inventario real, registro propio y checkout separado.</p>
       <div class="category-pills">
-        <a routerLink="/catalogo" [queryParams]="{ category: 'tecnologia' }">Tecnología</a>
+        <a routerLink="/catalogo" [queryParams]="{ category: 'tecnologia' }">Tecnologia</a>
         <a routerLink="/catalogo" [queryParams]="{ category: 'hogar' }">Hogar</a>
         <a routerLink="/catalogo" [queryParams]="{ category: 'gaming' }">Gaming</a>
         <a routerLink="/catalogo" [queryParams]="{ category: 'moda' }">Moda</a>
-        <a routerLink="/catalogo" [queryParams]="{ category: 'telefonia' }">Telefonía</a>
+        <a routerLink="/catalogo" [queryParams]="{ category: 'telefonia' }">Telefonia</a>
       </div>
       <div class="hero-actions">
         <a class="solid" routerLink="/login">Entrar</a>
         <a class="ghost" routerLink="/registro">Crear cuenta</a>
-        <a class="ghost" routerLink="/catalogo">Ver catálogo</a>
-        <button type="button" class="ghost" (click)="toggleCart()">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 8h-11z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="20" r="1.4" fill="currentColor"/><circle cx="18" cy="20" r="1.4" fill="currentColor"/><path d="M3 3h2l2 11h11" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-          </span>
+        <a class="ghost" routerLink="/catalogo">Ver catalogo</a>
+        <button type="button" class="ghost icon-action" (click)="toggleCart()">
+          <svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 8h-11z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="20" r="1.4" fill="currentColor"/><circle cx="18" cy="20" r="1.4" fill="currentColor"/><path d="M3 3h2l2 11h11" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
           <span>Carrito</span>
         </button>
       </div>
     </div>
 
     <aside class="hero-panel">
-      <div class="promo-card">
-        <span class="badge">Nuevo</span>
-        <h2>Todo fluye en un solo lugar</h2>
-        <p>Catálogo curado con productos, imágenes y stock real.</p>
+      <div class="hero-carousel">
+        <img [src]="currentHeroSlide().image" [alt]="currentHeroSlide().title" />
+        <div class="slide-copy">
+          <span class="badge">Nuevo</span>
+          <h2>{{ currentHeroSlide().title }}</h2>
+          <p>{{ currentHeroSlide().caption }}</p>
+        </div>
+        <div class="slide-dots">
+          <span *ngFor="let slide of heroSlides; let i = index" [class.active]="i === heroSlideIndex()"></span>
+        </div>
       </div>
       <div class="session-card">
         <div class="avatar">{{ (session.currentUser()?.displayName || 'G') | slice:0:1 }}</div>
         <div>
-          <p class="muted">Sesión</p>
+          <p class="muted">Sesion</p>
           <strong>{{ session.currentUser()?.displayName || 'Invitado' }}</strong>
           <p class="muted">{{ session.currentUser()?.roles?.join(', ') || 'Sin rol' }}</p>
         </div>
@@ -51,18 +55,25 @@
       <button type="button" class="carousel-nav" (click)="previousFeatured()" aria-label="Anterior">
         <svg viewBox="0 0 24 24"><path d="M15 6 9 12l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <div class="product-grid carousel-grid">
-        <article class="product-card" *ngFor="let product of featuredWindow()">
-        <img class="product-image" [src]="product.imageUrl" [alt]="product.title" />
-        <div class="tag">{{ product.category }}</div>
-        <h3>{{ product.title }}</h3>
-        <p>{{ product.description }}</p>
-        <div class="meta">
-          <strong>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
-          <span>Stock {{ product.stockAvailable }}</span>
-        </div>
-        <button type="button" class="add-btn" (click)="addToCart(product)">Agregar</button>
-      </article>
+      <div class="product-grid carousel-grid" [class.motion]="carouselMotion()">
+        <a class="product-card" *ngFor="let product of featuredWindow()" [routerLink]="['/producto', product.id]">
+          <button type="button" class="heart-btn" [class.active]="favorites.has(product.id)"
+            (click)="toggleFavorite(product, $event)" aria-label="Agregar a favoritos">
+            <svg viewBox="0 0 24 24"><path d="M20.8 4.6c-1.9-1.8-4.9-1.6-6.6.4L12 7.4 9.8 5C8.1 3 5.1 2.8 3.2 4.6c-2 1.9-2.1 5-.2 7l9 8.4 9-8.4c1.9-2 1.8-5.1-.2-7Z" fill="currentColor"/></svg>
+          </button>
+          <img class="product-image" [src]="product.imageUrl" [alt]="product.title" />
+          <div class="tag">{{ product.category }}</div>
+          <h3>{{ product.title }}</h3>
+          <p>{{ product.description }}</p>
+          <div class="meta">
+            <strong>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+            <span>Stock {{ product.stockAvailable }}</span>
+          </div>
+          <button type="button" class="add-btn" (click)="addToCartFromCard(product, $event)">
+            <svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 8h-11z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="20" r="1.4" fill="currentColor"/><circle cx="18" cy="20" r="1.4" fill="currentColor"/><path d="M3 3h2l2 11h11" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            <span>Agregar</span>
+          </button>
+        </a>
       </div>
       <button type="button" class="carousel-nav" (click)="nextFeatured()" aria-label="Siguiente">
         <svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -70,14 +81,14 @@
     </div>
 
     <ng-template #loadingState>
-      <div class="empty">{{ loading ? 'Cargando catálogo...' : 'Sin productos' }}</div>
+      <div class="empty">{{ loading ? 'Cargando catalogo...' : 'Sin productos' }}</div>
     </ng-template>
   </section>
 
   <section class="section" *ngIf="page()?.content?.length">
     <div class="section-head">
-      <h2>Explorar por categoría</h2>
-      <a routerLink="/catalogo">Ir al catálogo</a>
+      <h2>Explorar por categoria</h2>
+      <a routerLink="/catalogo">Ir al catalogo</a>
     </div>
 
     <div class="category-blocks">
@@ -87,13 +98,17 @@
           <a routerLink="/catalogo" [queryParams]="{ category }">Filtrar</a>
         </div>
         <div class="category-products">
-          <article class="product-card mini-card" *ngFor="let product of productsByCategory(category) | slice:0:4">
+          <a class="mini-card" *ngFor="let product of productsByCategory(category) | slice:0:6" [routerLink]="['/producto', product.id]">
             <img class="mini-image" [src]="product.imageUrl" [alt]="product.title" />
-            <div>
+            <div class="mini-copy">
               <strong>{{ product.title }}</strong>
               <p>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</p>
             </div>
-          </article>
+            <button type="button" class="heart-btn small" [class.active]="favorites.has(product.id)"
+              (click)="toggleFavorite(product, $event)" aria-label="Agregar a favoritos">
+              <svg viewBox="0 0 24 24"><path d="M20.8 4.6c-1.9-1.8-4.9-1.6-6.6.4L12 7.4 9.8 5C8.1 3 5.1 2.8 3.2 4.6c-2 1.9-2.1 5-.2 7l9 8.4 9-8.4c1.9-2 1.8-5.1-.2-7Z" fill="currentColor"/></svg>
+            </button>
+          </a>
         </div>
       </article>
     </div>
@@ -121,7 +136,7 @@
       </div>
     </div>
     <ng-template #emptyCart>
-      <p class="muted">Tu carrito está vacío.</p>
+      <p class="muted">Tu carrito esta vacio.</p>
     </ng-template>
     <footer>
       <div class="subtotal">

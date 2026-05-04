@@ -1,7 +1,6 @@
 package com.arquixpress.marketplace.sellers;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -16,7 +15,7 @@ public record SellerApplicationRequest(
         String companyDescription,
         String contactPhone,
         @NotBlank String category,
-        @NotEmpty List<ProductDraftRequest> products) {
+        List<ProductDraftRequest> products) {
 
     public record ProductDraftRequest(
             @NotBlank String title,

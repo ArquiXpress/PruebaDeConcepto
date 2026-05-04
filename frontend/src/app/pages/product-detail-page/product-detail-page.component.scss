@@ -12,7 +12,7 @@
 
 .product-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 1.2fr) minmax(280px, 1fr) 310px;
+  grid-template-columns: minmax(520px, 1.45fr) minmax(300px, 0.9fr) 340px;
   gap: 28px;
   margin-top: 20px;
   align-items: start;
@@ -26,16 +26,24 @@
 }
 
 .gallery {
-  padding: 20px;
+  min-height: 560px;
+  padding: 24px;
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-columns: 84px minmax(0, 1fr);
   gap: 16px;
+  align-items: center;
+}
+
+.gallery.single-image {
+  grid-template-columns: 1fr;
 }
 
 .main-image {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  height: min(62vh, 640px);
+  min-height: 500px;
   object-fit: contain;
+  animation: imageFade 0.28s ease;
 }
 
 .thumbs {
@@ -45,13 +53,24 @@
 }
 
 .thumbs button {
-  width: 72px;
-  height: 72px;
+  width: 84px;
+  height: 84px;
   padding: 4px;
   border: 1px solid rgba(18, 48, 74, 0.12);
   border-radius: 8px;
   background: #fff;
   cursor: pointer;
+}
+
+@keyframes imageFade {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .thumbs button.active {
@@ -134,6 +153,13 @@
 
   .gallery {
     grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .main-image {
+    min-height: 320px;
+    height: auto;
+    aspect-ratio: 1 / 1;
   }
 
   .thumbs {

@@ -11,6 +11,7 @@ import { ProfilePageComponent } from './pages/profile-page/profile-page.componen
 import { ProductDetailPageComponent } from './pages/product-detail-page/product-detail-page.component';
 import { PurchasesPageComponent } from './pages/purchases-page/purchases-page.component';
 import { FavoritesPageComponent } from './pages/favorites-page/favorites-page.component';
+import { PqrsPageComponent } from './pages/pqrs-page/pqrs-page.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -20,6 +21,7 @@ export const routes: Routes = [
   { path: 'perfil', component: ProfilePageComponent },
   { path: 'mis-compras', component: PurchasesPageComponent },
   { path: 'favoritos', component: FavoritesPageComponent },
+  { path: 'pqrs', component: PqrsPageComponent },
   { path: 'catalogo', component: CatalogPageComponent },
   { path: 'producto/:id', component: ProductDetailPageComponent },
   { path: 'carrito', component: CartPageComponent },

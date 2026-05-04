@@ -38,14 +38,13 @@ public class SellerApplicationService {
 
     public SellerApplicationResponse create(CurrentUser user, SellerApplicationRequest request) {
         String sellerType = request.sellerType().trim().toUpperCase();
-        int minimumProducts = sellerType.equals("JURIDICA") ? 3 : 1;
-        if (request.products().size() < minimumProducts) {
-            throw new IllegalArgumentException("Debes cargar al menos " + minimumProducts + " producto(s)");
-        }
         if (sellerType.equals("JURIDICA") && !StringUtils.hasText(request.companyName())) {
             throw new IllegalArgumentException("El nombre de la empresa es obligatorio");
         }
-        request.products().forEach(product -> {
+        List<SellerApplicationRequest.ProductDraftRequest> products = request.products() == null
+                ? List.of()
+                : request.products();
+        products.forEach(product -> {
             if (productImages(product).isEmpty()) {
                 throw new IllegalArgumentException("Cada producto debe tener al menos una foto");
             }
@@ -53,7 +52,7 @@ public class SellerApplicationService {
 
         UUID id = UUID.randomUUID();
         Instant createdAt = Instant.now();
-        String productsJson = toJson(request.products());
+        String productsJson = toJson(products);
         jdbc.update("""
                 insert into seller_application (
                     id, user_id, seller_type, legal_document_type, legal_document_number,

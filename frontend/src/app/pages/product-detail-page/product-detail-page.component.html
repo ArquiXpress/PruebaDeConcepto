@@ -4,7 +4,7 @@
   <p class="error" *ngIf="error">{{ error }}</p>
 
   <section class="product-layout" *ngIf="product() as item">
-    <div class="gallery">
+    <div class="gallery" [class.single-image]="productImages(item).length === 1">
       <div class="thumbs" *ngIf="productImages(item).length > 1">
         <button type="button" *ngFor="let image of productImages(item)" (click)="selectImage(image)"
           [class.active]="selectedImage() === image">

@@ -16,14 +16,74 @@
     </div>
 
     <div *ngIf="session.isLoggedIn() && (session.isSeller() || session.isAdmin() || session.hasRole('SUPERADMIN')); else sellerRequest">
-      <section class="block" *ngIf="session.isSeller()">
-        <h2>Panel de vendedor</h2>
-        <p class="muted">Vista operativa para revisar catalogo y stock disponible.</p>
-        <div class="items">
-          <article *ngFor="let product of roleProducts('SELLER')">
-            <strong>{{ product.title }}</strong>
-            <p>{{ product.category }} · Stock {{ product.stockAvailable }}</p>
-          </article>
+      <section class="block seller-dashboard" *ngIf="session.isSeller()">
+        <div class="section-head inline">
+          <div>
+            <h2>Panel de vendedor</h2>
+            <p class="muted">Tu cuenta ya fue aprobada. Desde aqui publicas productos sin volver a cargar documentos.</p>
+          </div>
+          <span class="summary-box compact">{{ roleProducts('SELLER').length }} publicados</span>
+        </div>
+
+        <div class="seller-products" *ngIf="roleProducts('SELLER').length; else noSellerProducts">
+          <a class="seller-product" *ngFor="let product of roleProducts('SELLER')" [routerLink]="['/producto', product.id]">
+            <img [src]="product.imageUrl" [alt]="product.title" />
+            <div>
+              <strong>{{ product.title }}</strong>
+              <p>{{ product.category }} · Stock {{ product.stockAvailable }}</p>
+              <span>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            </div>
+          </a>
+        </div>
+        <ng-template #noSellerProducts>
+          <p class="muted empty-line">Aun no tienes productos publicados.</p>
+        </ng-template>
+      </section>
+
+      <section class="form-section" *ngIf="session.isSeller()">
+        <div class="section-head inline">
+          <div>
+            <h3>Vender un nuevo producto</h3>
+            <p>Agrega varias fotos. La primera sera la portada del catalogo.</p>
+          </div>
+          <button type="button" class="primary" (click)="publishProduct()" [disabled]="productLoading">
+            {{ productLoading ? 'Publicando...' : 'Publicar producto' }}
+          </button>
+        </div>
+
+        <div class="draft single">
+          <div class="draft-preview">
+            <img [src]="productCover(newProduct)" [alt]="newProduct.title || 'Nuevo producto'" />
+          </div>
+          <div class="draft-fields">
+            <input [(ngModel)]="newProduct.title" placeholder="Titulo del producto" />
+            <textarea [(ngModel)]="newProduct.description" placeholder="Descripcion clara del producto, medidas, materiales, garantia o condiciones"></textarea>
+            <div class="numbers three">
+              <label>
+                Categoria
+                <select [(ngModel)]="newProductCategory">
+                  <option *ngFor="let category of categories" [value]="category">{{ category | titlecase }}</option>
+                </select>
+              </label>
+              <label>
+                Precio
+                <input [(ngModel)]="newProduct.price" type="number" min="0" />
+              </label>
+              <label>
+                Stock
+                <input [(ngModel)]="newProduct.stockAvailable" type="number" min="0" />
+              </label>
+            </div>
+            <div class="photos">
+              <div class="photo-row" *ngFor="let image of newProduct.imageUrls; let imageIndex = index">
+                <input [(ngModel)]="newProduct.imageUrls[imageIndex]" placeholder="URL de foto {{ imageIndex + 1 }}" />
+                <button type="button" class="icon-btn" (click)="removeProductImage(newProduct, imageIndex)">Quitar</button>
+              </div>
+              <button type="button" class="add-photo" (click)="addProductImage(newProduct)">Agregar otra foto</button>
+            </div>
+            <p class="muted" *ngIf="productMessage">{{ productMessage }}</p>
+            <p class="error" *ngIf="productError">{{ productError }}</p>
+          </div>
         </div>
       </section>
 
@@ -40,12 +100,12 @@
 
       <section class="block" *ngIf="session.hasRole('SUPERADMIN')">
         <h2>Crear operador</h2>
-        <p class="muted">Solo el superadministrador puede crear vendedores, logistica o administradores operativos.</p>
+        <p class="muted">Solo el superadministrador puede crear logistica o administradores operativos.</p>
         <div class="operator-form">
           <input [(ngModel)]="operatorDisplayName" placeholder="Nombre visible" />
           <input [(ngModel)]="operatorEmail" placeholder="Email" />
           <input [(ngModel)]="operatorPassword" type="password" placeholder="Clave" />
-          <input [(ngModel)]="operatorRoles" placeholder="Roles separados por coma, por ejemplo SELLER" />
+          <input [(ngModel)]="operatorRoles" placeholder="Roles separados por coma, por ejemplo LOGISTICS" />
           <button type="button" class="primary" (click)="createOperator()" [disabled]="operatorLoading">
             {{ operatorLoading ? 'Creando...' : 'Crear operador' }}
           </button>
@@ -59,12 +119,12 @@
         <div class="seller-intro">
           <div>
             <p class="eyebrow">Solicitud de vendedor</p>
-            <h2>Publica tus primeros productos</h2>
-            <p class="muted">Completa la verificacion y agrega las publicaciones que revisara el equipo.</p>
+            <h2>Verifica tu cuenta una sola vez</h2>
+            <p class="muted">Cuando un administrador apruebe tu perfil, podras publicar productos desde tu panel de vendedor.</p>
           </div>
           <div class="summary-box">
             <strong>{{ sellerType === 'JURIDICA' ? 'Empresa' : 'Persona natural' }}</strong>
-            <span>{{ requiredProductCount() }} producto(s) minimo</span>
+            <span>Sin publicaciones iniciales obligatorias</span>
           </div>
         </div>
 
@@ -84,11 +144,11 @@
                 <p>Tipo, categoria y empresa si aplica.</p>
               </div>
             </div>
-            <div class="step active">
+            <div class="step">
               <span>3</span>
               <div>
                 <strong>Publicaciones</strong>
-                <p>Fotos, precio, descripcion y stock.</p>
+                <p>Se habilitan despues de la aprobacion.</p>
               </div>
             </div>
           </aside>
@@ -103,7 +163,7 @@
               <div class="field-grid">
                 <label>
                   Tipo de vendedor
-                  <select [(ngModel)]="sellerType" (change)="ensureProductRows()">
+                  <select [(ngModel)]="sellerType">
                     <option value="NATURAL">Persona natural</option>
                     <option value="JURIDICA">Persona juridica / empresa</option>
                   </select>
@@ -145,60 +205,6 @@
                   Descripcion de la empresa
                   <textarea [(ngModel)]="companyDescription" placeholder="Que vende, donde opera y por que deberia aprobarse la tienda"></textarea>
                 </label>
-              </div>
-            </section>
-
-            <section class="form-section">
-              <div class="section-head inline">
-                <div>
-                  <h3>Publicaciones iniciales</h3>
-                  <p>Agrega varias fotos por producto. La primera foto sera la portada del catalogo.</p>
-                </div>
-                <button type="button" class="secondary" (click)="addProductDraft()">Agregar producto</button>
-              </div>
-
-              <div class="drafts">
-                <article *ngFor="let product of sellerProducts; let i = index" class="draft">
-                  <div class="draft-preview">
-                    <img [src]="productCover(product)" [alt]="product.title || 'Producto ' + (i + 1)" />
-                    <button type="button" class="ghost" (click)="removeProductDraft(i)"
-                      [disabled]="sellerProducts.length <= requiredProductCount()">
-                      Eliminar
-                    </button>
-                  </div>
-
-                  <div class="draft-fields">
-                    <div class="draft-title">
-                      <strong>Producto {{ i + 1 }}</strong>
-                      <span>{{ cleanImages(product).length }} foto(s)</span>
-                    </div>
-                    <input [(ngModel)]="product.title" placeholder="Titulo del producto" />
-                    <textarea [(ngModel)]="product.description" placeholder="Descripcion clara del producto, medidas, materiales, garantia o condiciones"></textarea>
-
-                    <div class="numbers">
-                      <label>
-                        Precio
-                        <input [(ngModel)]="product.price" type="number" min="0" />
-                      </label>
-                      <label>
-                        Stock
-                        <input [(ngModel)]="product.stockAvailable" type="number" min="1" />
-                      </label>
-                    </div>
-
-                    <div class="photos">
-                      <div class="photo-row" *ngFor="let image of product.imageUrls; let imageIndex = index">
-                        <input [(ngModel)]="product.imageUrls[imageIndex]" placeholder="URL de foto {{ imageIndex + 1 }}" />
-                        <button type="button" class="icon-btn" (click)="removeProductImage(product, imageIndex)">
-                          Quitar
-                        </button>
-                      </div>
-                      <button type="button" class="add-photo" (click)="addProductImage(product)">
-                        Agregar otra foto
-                      </button>
-                    </div>
-                  </div>
-                </article>
               </div>
             </section>
 

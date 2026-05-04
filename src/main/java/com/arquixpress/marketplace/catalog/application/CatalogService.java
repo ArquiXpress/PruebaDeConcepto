@@ -1,9 +1,17 @@
 package com.arquixpress.marketplace.catalog.application;
 
 import com.arquixpress.marketplace.catalog.ProductRepository;
+import com.arquixpress.marketplace.catalog.ProductCreateRequest;
 import com.arquixpress.marketplace.catalog.ProductStatus;
 import com.arquixpress.marketplace.catalog.ProductSummary;
+import com.arquixpress.marketplace.identity.CurrentUser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
@@ -20,12 +28,18 @@ import org.springframework.stereotype.Service;
 public class CatalogService {
     private final ProductRepository products;
     private final NamedParameterJdbcTemplate catalogReadReplica;
+    private final NamedParameterJdbcTemplate jdbc;
+    private final ObjectMapper mapper;
     private final boolean readReplicaEnabled;
 
     public CatalogService(ProductRepository products,
+                          NamedParameterJdbcTemplate jdbc,
+                          ObjectMapper mapper,
                           ObjectProvider<NamedParameterJdbcTemplate> catalogReadReplica,
                           @Value("${app.read-replica.enabled:false}") boolean readReplicaEnabled) {
         this.products = products;
+        this.jdbc = jdbc;
+        this.mapper = mapper;
         this.catalogReadReplica = catalogReadReplica.getIfAvailable();
         this.readReplicaEnabled = readReplicaEnabled;
     }
@@ -54,6 +68,37 @@ public class CatalogService {
             }
         }
         return detailPrimary(id);
+    }
+
+    @CacheEvict(cacheNames = "product-search", allEntries = true)
+    public ProductSummary create(CurrentUser seller, ProductCreateRequest request) {
+        List<String> images = cleanImages(request.imageUrls());
+        if (images.isEmpty()) {
+            throw new IllegalArgumentException("Agrega al menos una foto del producto");
+        }
+        UUID id = UUID.randomUUID();
+        jdbc.update("""
+                insert into product (
+                    id, seller_id, title, description, category, image_url, image_urls,
+                    price, stock_available, status, created_at
+                ) values (
+                    :id, :sellerId, :title, :description, :category, :imageUrl, :imageUrls,
+                    :price, :stockAvailable, :status, :createdAt
+                )
+                """,
+                new MapSqlParameterSource()
+                        .addValue("id", id)
+                        .addValue("sellerId", seller.id())
+                        .addValue("title", request.title().trim())
+                        .addValue("description", request.description().trim())
+                        .addValue("category", request.category().trim().toLowerCase())
+                        .addValue("imageUrl", images.get(0))
+                        .addValue("imageUrls", toJson(images))
+                        .addValue("price", request.price())
+                        .addValue("stockAvailable", request.stockAvailable())
+                        .addValue("status", ProductStatus.ACTIVE.name())
+                        .addValue("createdAt", Timestamp.from(Instant.now())));
+        return detail(id);
     }
 
     private Page<ProductSummary> searchPrimary(String normalizedQuery, String normalizedCategory, Pageable pageable) {
@@ -130,5 +175,24 @@ public class CatalogService {
 
     private String pattern(String value) {
         return "%" + value.toLowerCase() + "%";
+    }
+
+    private List<String> cleanImages(List<String> images) {
+        if (images == null) {
+            return List.of();
+        }
+        return images.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(String::trim)
+                .distinct()
+                .toList();
+    }
+
+    private String toJson(Object value) {
+        try {
+            return mapper.writeValueAsString(value);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException("No se pudieron procesar las imagenes");
+        }
     }
 }

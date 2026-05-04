@@ -24,7 +24,7 @@
       <a routerLink="/catalogo" [queryParams]="{ oferta: true }">Ofertas</a>
       <a routerLink="/catalogo" [queryParams]="{ cupones: true }">Cupones</a>
       <a routerLink="/operaciones">Vender</a>
-      <a routerLink="/catalogo" [queryParams]="{ ayuda: 'pqr' }">Ayuda/PQR</a>
+      <a routerLink="/pqrs">Ayuda/PQR</a>
       <a *ngIf="session.canAccessOperations()" routerLink="/operaciones">Operaciones</a>
     </nav>
 

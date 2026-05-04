@@ -1,0 +1,116 @@
+<main class="pqrs-page">
+  <section class="header">
+    <div>
+      <p class="eyebrow">Ayuda / PQR</p>
+      <h1>Radica una PQRS</h1>
+      <p>Registra una peticion, queja, reclamo, sugerencia o felicitacion sobre tu experiencia en ArquiXpress.</p>
+    </div>
+    <a routerLink="/">Volver al inicio</a>
+  </section>
+
+  <form class="pqrs-form" (ngSubmit)="submit()">
+    <section class="form-card">
+      <h2>Tipo de solicitud</h2>
+      <div class="field-grid">
+        <label>
+          Clase de PQRS
+          <select [(ngModel)]="requestType" name="requestType">
+            <option value="PETICION">Peticion</option>
+            <option value="QUEJA">Queja</option>
+            <option value="RECLAMO">Reclamo</option>
+            <option value="SUGERENCIA">Sugerencia</option>
+            <option value="FELICITACION">Felicitacion</option>
+            <option value="DENUNCIA">Denuncia</option>
+          </select>
+        </label>
+        <label>
+          Tipo de solicitante
+          <select [(ngModel)]="personType" name="personType">
+            <option value="NATURAL">Persona natural</option>
+            <option value="JURIDICA">Persona juridica</option>
+          </select>
+        </label>
+        <label>
+          Pedido relacionado
+          <input [(ngModel)]="orderId" name="orderId" placeholder="Opcional" />
+        </label>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <h2>Datos del solicitante</h2>
+      <div class="field-grid">
+        <label>
+          Nombre completo o razon social
+          <input [(ngModel)]="fullName" name="fullName" required />
+        </label>
+        <label>
+          Tipo de documento
+          <select [(ngModel)]="documentType" name="documentType">
+            <option value="CEDULA">Cedula</option>
+            <option value="NIT">NIT</option>
+            <option value="PASAPORTE">Pasaporte</option>
+            <option value="CE">Cedula de extranjeria</option>
+          </select>
+        </label>
+        <label>
+          Numero de documento
+          <input [(ngModel)]="documentNumber" name="documentNumber" required />
+        </label>
+        <label>
+          Correo electronico
+          <input [(ngModel)]="email" name="email" type="email" required />
+        </label>
+        <label>
+          Telefono
+          <input [(ngModel)]="phone" name="phone" />
+        </label>
+        <label>
+          Medio de respuesta
+          <select [(ngModel)]="responseChannel" name="responseChannel">
+            <option value="EMAIL">Correo electronico</option>
+            <option value="PHONE">Telefono</option>
+            <option value="ADDRESS">Direccion fisica</option>
+          </select>
+        </label>
+        <label>
+          Ciudad
+          <input [(ngModel)]="city" name="city" />
+        </label>
+        <label class="wide">
+          Direccion de correspondencia
+          <input [(ngModel)]="address" name="address" placeholder="Obligatoria si eliges respuesta fisica" />
+        </label>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <h2>Detalle de la solicitud</h2>
+      <label>
+        Asunto
+        <input [(ngModel)]="subject" name="subject" required />
+      </label>
+      <label>
+        Hechos o descripcion
+        <textarea [(ngModel)]="facts" name="facts" required></textarea>
+      </label>
+      <label>
+        Solicitud concreta
+        <textarea [(ngModel)]="request" name="request" required></textarea>
+      </label>
+      <label>
+        Anexos o soportes
+        <input [(ngModel)]="attachments" name="attachments" placeholder="URL de archivo, factura, guia o evidencia" />
+      </label>
+    </section>
+
+    <section class="form-card consent">
+      <label class="checkbox">
+        <input type="checkbox" [(ngModel)]="dataConsent" name="dataConsent" required />
+        <span>Autorizo el tratamiento de mis datos personales para gestionar y responder esta PQRS.</span>
+      </label>
+      <button type="submit" class="primary">Radicar PQRS</button>
+      <p class="success" *ngIf="submitted">PQRS radicada en modo demostracion. Te responderemos por el medio seleccionado.</p>
+    </section>
+  </form>
+</main>

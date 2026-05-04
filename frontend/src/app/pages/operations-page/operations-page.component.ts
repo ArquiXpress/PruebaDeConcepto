@@ -46,6 +46,11 @@ export class OperationsPageComponent implements OnInit {
   sellerProducts: SellerProductDraft[] = [
     { title: '', description: '', imageUrls: [''], price: 0, stockAvailable: 1 },
   ];
+  newProduct: SellerProductDraft = { title: '', description: '', imageUrls: [''], price: 0, stockAvailable: 1 };
+  newProductCategory = 'tecnologia';
+  productLoading = false;
+  productMessage = '';
+  productError = '';
   sellerLoading = false;
   sellerMessage = '';
   sellerError = '';
@@ -77,7 +82,11 @@ export class OperationsPageComponent implements OnInit {
 
   roleProducts(role: 'SELLER' | 'ADMIN'): Product[] {
     const items = this.page()?.content ?? [];
-    return role === 'SELLER' ? items.slice(0, 3) : items;
+    if (role === 'SELLER') {
+      const currentUserId = this.session.currentUser()?.id;
+      return items.filter((product) => product.sellerId === currentUserId);
+    }
+    return items;
   }
 
   createOperator(): void {
@@ -168,9 +177,7 @@ export class OperationsPageComponent implements OnInit {
   }
 
   productRequirementText(): string {
-    return this.sellerType === 'JURIDICA'
-      ? 'Las empresas deben proponer minimo 3 productos para revisar la tienda.'
-      : 'Como persona natural necesitas 1 publicacion inicial para revisar tu cuenta.';
+    return 'La aprobacion se hace una sola vez. Despues podras publicar productos desde tu panel de vendedor.';
   }
 
   submitSellerApplication(): void {
@@ -189,11 +196,7 @@ export class OperationsPageComponent implements OnInit {
       companyDescription: this.companyDescription,
       contactPhone: this.contactPhone,
       category: this.sellerCategory,
-      products: this.sellerProducts.map((product) => ({
-        ...product,
-        imageUrl: this.cleanImages(product)[0] || '',
-        imageUrls: this.cleanImages(product),
-      })),
+      products: [],
     }).subscribe({
       next: () => {
         this.sellerLoading = false;
@@ -202,6 +205,31 @@ export class OperationsPageComponent implements OnInit {
       error: (error) => {
         this.sellerLoading = false;
         this.sellerError = error?.error?.message || 'No se pudo enviar la solicitud.';
+      },
+    });
+  }
+
+  publishProduct(): void {
+    this.productLoading = true;
+    this.productMessage = '';
+    this.productError = '';
+    this.http.post<Product>('/api/products', {
+      title: this.newProduct.title,
+      description: this.newProduct.description,
+      category: this.newProductCategory,
+      imageUrls: this.cleanImages(this.newProduct),
+      price: this.newProduct.price,
+      stockAvailable: this.newProduct.stockAvailable,
+    }).subscribe({
+      next: () => {
+        this.productLoading = false;
+        this.productMessage = 'Producto publicado correctamente.';
+        this.newProduct = this.emptyProductDraft();
+        this.load();
+      },
+      error: (error) => {
+        this.productLoading = false;
+        this.productError = error?.error?.message || 'No se pudo publicar el producto.';
       },
     });
   }

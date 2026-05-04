@@ -1,5 +1,6 @@
 package com.arquixpress.marketplace.catalog.api;
 
+import com.arquixpress.marketplace.catalog.ProductCreateRequest;
 import com.arquixpress.marketplace.catalog.ProductSummary;
 import com.arquixpress.marketplace.catalog.application.CatalogService;
 import com.arquixpress.marketplace.identity.CurrentUser;
@@ -11,6 +12,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,6 +47,13 @@ public class ProductController {
     @GetMapping("/{id}")
     public ProductSummary detail(@PathVariable UUID id) {
         return catalog.detail(id);
+    }
+
+    @PostMapping
+    public ProductSummary create(@RequestBody ProductCreateRequest request, HttpServletRequest http) {
+        CurrentUser user = CurrentUser.from(http);
+        roles.requireAny(user, Role.SELLER, Role.ADMIN, Role.SUPERADMIN);
+        return catalog.create(user, request);
     }
 
     @PatchMapping("/{id}/stock")

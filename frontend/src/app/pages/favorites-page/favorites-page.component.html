@@ -1,19 +1,26 @@
 <main class="page">
   <section class="panel">
     <div class="panel-head">
-      <h1>Favoritos</h1>
+      <div>
+        <h1>Favoritos</h1>
+        <p>Productos guardados para revisar despues.</p>
+      </div>
       <a routerLink="/catalogo">Explorar catalogo</a>
     </div>
 
     <div class="grid" *ngIf="products().length; else empty">
-      <article *ngFor="let product of products()">
-        <a [routerLink]="['/producto', product.id]">
-          <img [src]="product.imageUrl" [alt]="product.title" />
-        </a>
+      <a class="product-card" *ngFor="let product of products()" [routerLink]="['/producto', product.id]">
+        <button type="button" class="heart-btn active" (click)="toggleFavorite(product, $event)" aria-label="Quitar favorito">
+          <svg viewBox="0 0 24 24"><path d="M20.8 4.6c-1.9-1.8-4.9-1.6-6.6.4L12 7.4 9.8 5C8.1 3 5.1 2.8 3.2 4.6c-2 1.9-2.1 5-.2 7l9 8.4 9-8.4c1.9-2 1.8-5.1-.2-7Z" fill="currentColor"/></svg>
+        </button>
+        <img [src]="product.imageUrl" [alt]="product.title" />
         <strong>{{ product.title }}</strong>
         <span>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
-        <button type="button" (click)="cart.add(product.id)">Agregar al carrito</button>
-      </article>
+        <button type="button" class="add-btn" (click)="addToCart(product, $event)">
+          <svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 8h-11z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="20" r="1.4" fill="currentColor"/><circle cx="18" cy="20" r="1.4" fill="currentColor"/><path d="M3 3h2l2 11h11" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+          <span>Agregar</span>
+        </button>
+      </a>
     </div>
 
     <ng-template #empty>
