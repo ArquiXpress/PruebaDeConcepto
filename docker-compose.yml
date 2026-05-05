@@ -93,6 +93,10 @@ services:
       PAYMENT_TIMEOUT_RATE: "0.02"
       PAYMENT_MIN_LATENCY_MS: "30"
       PAYMENT_MAX_LATENCY_MS: "180"
+      NOTIFICATIONS_ENABLED: "true"
+      RESEND_API_KEY: "re_fdCY3Sya_AmFzAxycSuYkb3fvPibFA6ko"
+      NOTIFICATIONS_FROM_EMAIL: "onboarding@resend.dev"
+      APP_URL: "http://localhost:4200"
     expose:
       - "8080"
     depends_on:

@@ -1,5 +1,7 @@
 package com.arquixpress.marketplace.identity;
 
+import com.arquixpress.marketplace.notifications.NotificationOutbox;
+import com.arquixpress.marketplace.notifications.NotificationOutboxRepository;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -10,9 +12,11 @@ import org.springframework.util.StringUtils;
 @Service
 public class AuthService {
     private final AppUserRepository users;
+    private final NotificationOutboxRepository outbox;
 
-    public AuthService(AppUserRepository users) {
-        this.users = users;
+    public AuthService(AppUserRepository users, NotificationOutboxRepository outbox) {
+        this.users  = users;
+        this.outbox = outbox;
     }
 
     public AuthUser login(LoginRequest request) {
@@ -38,7 +42,12 @@ public class AuthService {
                 request.password(),
                 request.displayName().trim(),
                 Set.of(Role.CLIENT));
-        return users.save(created).toAuthUser();
+        AuthUser saved = users.save(created).toAuthUser();
+        
+        outbox.save(new NotificationOutbox(
+                "USER", created.id(), "USER_REGISTERED",
+                "{\"userId\":\"" + created.id() + "\"}"));
+        return saved;
     }
 
     public AuthUser createOperator(RegisterRequest request, CurrentUser currentUser) {
@@ -70,6 +79,23 @@ public class AuthService {
 
     public List<AuthUser> listDemoUsers() {
         return users.findAll().stream().map(AppUser::toAuthUser).toList();
+    }
+
+    public AuthUser changePassword(UUID userId, String newPassword) {
+        if (!StringUtils.hasText(newPassword) || newPassword.length() < 4) {
+            throw new IllegalArgumentException("La clave debe tener al menos 4 caracteres");
+        }
+        AppUser user = users.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        AppUser updated = AppUser.create(
+                user.id(), user.email(), newPassword,
+                user.displayName(), user.roleSet());
+        users.save(updated);
+
+        outbox.save(new NotificationOutbox(
+                "USER", userId, "PASSWORD_CHANGED",
+                "{\"userId\":\"" + userId + "\"}"));
+        return updated.toAuthUser();
     }
 
     private String normalize(String email) {
