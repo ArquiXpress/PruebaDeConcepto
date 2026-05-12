@@ -25,6 +25,9 @@ public class PaymentTransaction {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
+    @Column(nullable = false)
+    private String paymentMethod;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus status;
@@ -39,11 +42,12 @@ public class PaymentTransaction {
     protected PaymentTransaction() {
     }
 
-    public PaymentTransaction(UUID id, UUID orderId, String idempotencyKey, BigDecimal amount) {
+    public PaymentTransaction(UUID id, UUID orderId, String idempotencyKey, BigDecimal amount, String paymentMethod) {
         this.id = id;
         this.orderId = orderId;
         this.idempotencyKey = idempotencyKey;
         this.amount = amount;
+        this.paymentMethod = paymentMethod;
         this.status = PaymentStatus.PENDING;
         this.createdAt = Instant.now();
     }
@@ -57,5 +61,7 @@ public class PaymentTransaction {
     public UUID id() { return id; }
     public UUID orderId() { return orderId; }
     public String idempotencyKey() { return idempotencyKey; }
+    public String paymentMethod() { return paymentMethod == null || paymentMethod.isBlank() ? "Pago simulado" : paymentMethod; }
+    public String transactionId() { return id.toString(); }
     public PaymentStatus status() { return status; }
 }

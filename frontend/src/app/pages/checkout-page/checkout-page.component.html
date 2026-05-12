@@ -5,15 +5,275 @@
       <a routerLink="/carrito">Volver al carrito</a>
     </div>
 
-    <p class="muted">Usuario activo: {{ session.currentUser()?.displayName }} ({{ session.currentUser()?.roles?.join(', ') || 'Sin rol' }})</p>
-    <p class="muted">Items en carrito: {{ total() }}</p>
+    <div class="layout">
+      <div class="checkout-card">
+        <p class="muted">
+          Usuario activo:
+          {{ session.currentUser()?.displayName || 'Invitado demo' }}
+          ({{ session.currentUser()?.roles?.join(', ') || 'CLIENT' }})
+        </p>
+        <p class="muted">Productos en carrito: {{ itemCount() }}</p>
 
-    <button type="button" class="primary" (click)="executeCheckout()" [disabled]="loading || !cart.items().length">
-      {{ loading ? 'Procesando...' : 'Confirmar checkout' }}
-    </button>
+        <div class="payment-block">
+          <label for="paymentMethod">Metodo de pago</label>
+          <select id="paymentMethod" [(ngModel)]="selectedPaymentMethod" (ngModelChange)="onPaymentMethodChange()">
+            <option *ngFor="let option of paymentMethodOptions" [ngValue]="option">{{ option }}</option>
+          </select>
+
+          <input
+            *ngIf="isCustomPaymentMethod()"
+            type="text"
+            [(ngModel)]="customPaymentMethod"
+            placeholder="Escribe el metodo de pago"
+            maxlength="80" />
+
+          <section class="payment-form" *ngIf="isCardMethod()">
+            <div class="payment-grid">
+              <label>
+                <span>Nombre del titular</span>
+                <input
+                  type="text"
+                  [(ngModel)]="cardHolderName"
+                  placeholder="Como aparece en la tarjeta"
+                  maxlength="80" />
+              </label>
+
+              <label>
+                <span>Numero de tarjeta</span>
+                <input
+                  type="text"
+                  [(ngModel)]="cardNumber"
+                  (ngModelChange)="normalizeCardNumber()"
+                  inputmode="numeric"
+                  placeholder="1234 5678 9012 3456"
+                  maxlength="19" />
+              </label>
+
+              <label>
+                <span>Mes de expiracion</span>
+                <select [(ngModel)]="expiryMonth">
+                  <option value="">Mes</option>
+                  <option *ngFor="let month of expiryMonths" [ngValue]="month">{{ month }}</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Año de expiracion</span>
+                <select [(ngModel)]="expiryYear">
+                  <option value="">Año</option>
+                  <option *ngFor="let year of expiryYears" [ngValue]="year">{{ year }}</option>
+                </select>
+              </label>
+
+              <label>
+                <span>CVV</span>
+                <input
+                  type="password"
+                  [(ngModel)]="cardCvv"
+                  (ngModelChange)="normalizeCardCvv()"
+                  inputmode="numeric"
+                  placeholder="123"
+                  maxlength="4" />
+              </label>
+
+              <label *ngIf="isCreditCardMethod()">
+                <span>Cuotas simuladas</span>
+                <select [(ngModel)]="installments">
+                  <option [ngValue]="1">1 cuota</option>
+                  <option [ngValue]="3">3 cuotas</option>
+                  <option [ngValue]="6">6 cuotas</option>
+                  <option [ngValue]="12">12 cuotas</option>
+                </select>
+              </label>
+            </div>
+
+            <p class="helper">Marca detectada: <strong>{{ cardBrand() }}</strong>. Este pago es 100% simulado.</p>
+          </section>
+
+          <section class="payment-form" *ngIf="isPseMethod()">
+            <div class="payment-grid">
+              <label>
+                <span>Banco</span>
+                <select [(ngModel)]="pseBank">
+                  <option *ngFor="let bank of pseBankOptions" [ngValue]="bank">{{ bank }}</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Cedula del titular</span>
+                <input
+                  type="text"
+                  [(ngModel)]="pseDocument"
+                  (ngModelChange)="normalizePseDocument()"
+                  inputmode="numeric"
+                  placeholder="Ingresa tu cedula"
+                  maxlength="10" />
+              </label>
+            </div>
+
+            <p class="helper">Simularemos la redireccion a PSE y el debito desde el banco seleccionado.</p>
+          </section>
+
+          <section class="payment-form" *ngIf="isTransferMethod()">
+            <div class="account-card">
+              <p class="eyebrow">Cuenta bancaria simulada del admin</p>
+              <strong>{{ adminTransferAccount.bank }}</strong>
+              <span>{{ adminTransferAccount.accountType }}</span>
+              <strong class="account-number">{{ adminTransferAccount.accountNumber }}</strong>
+              <span>{{ adminTransferAccount.holderName }} · {{ adminTransferAccount.document }}</span>
+              <small>Soporte: {{ adminTransferAccount.supportEmail }} · Ref. {{ adminTransferAccount.referenceCode }}</small>
+            </div>
+
+            <div class="payment-grid">
+              <label>
+                <span>Nombre de quien transfiere</span>
+                <input
+                  type="text"
+                  [(ngModel)]="transferPayerName"
+                  placeholder="Titular de la cuenta origen"
+                  maxlength="80" />
+              </label>
+
+              <label>
+                <span>Referencia de la transferencia</span>
+                <input
+                  type="text"
+                  [(ngModel)]="transferReference"
+                  (ngModelChange)="normalizeTransferReference()"
+                  placeholder="TRF-2026-001"
+                  maxlength="18" />
+              </label>
+            </div>
+
+            <label class="check-row">
+              <input type="checkbox" [(ngModel)]="transferConfirmed" />
+              <span>Confirmo que usare esta cuenta simulada del administrador para la transferencia.</span>
+            </label>
+          </section>
+
+          <section class="payment-form" *ngIf="isCashOnDeliveryMethod()">
+            <label>
+              <span>Instrucciones para entrega</span>
+              <textarea
+                [(ngModel)]="cashOnDeliveryNotes"
+                rows="3"
+                maxlength="180"
+                placeholder="Ej: entregar en porteria, llamar antes de llegar"></textarea>
+            </label>
+            <p class="helper">El pago se marcara como cobro simulado al momento de la entrega.</p>
+          </section>
+        </div>
+
+        <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+        <button type="button" class="primary" (click)="executeCheckout()" [disabled]="loading || !cart.items().length">
+          {{ loading ? 'Procesando...' : 'Confirmar checkout' }}
+        </button>
+      </div>
+
+      <aside class="summary-card">
+        <h2>Resumen del pedido</h2>
+
+        <div class="summary-list" *ngIf="cart.items().length; else emptyState">
+          <article class="summary-item" *ngFor="let item of cart.items()">
+            <img
+              *ngIf="product(item.productId)?.imageUrl"
+              [src]="product(item.productId)?.imageUrl"
+              [alt]="product(item.productId)?.title || item.productId" />
+            <div class="summary-copy">
+              <strong>{{ product(item.productId)?.title || item.productId }}</strong>
+              <span>{{ item.quantity }} unidad(es)</span>
+            </div>
+            <strong>{{ ((product(item.productId)?.price || 0) * item.quantity) | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          </article>
+        </div>
+
+        <ng-template #emptyState>
+          <div class="empty">
+            <h3>No hay productos listos para pagar</h3>
+            <p>Agrega productos desde el catálogo o vuelve al carrito para ajustar la compra.</p>
+          </div>
+        </ng-template>
+
+        <div class="summary-total">
+          <span>Total estimado</span>
+          <strong>{{ subtotal() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+      </aside>
+    </div>
 
     <article class="result" *ngIf="result() as checkoutResult">
-      <pre>{{ checkoutResult | json }}</pre>
+      <div class="result-head">
+        <div>
+          <p class="eyebrow">Resultado del checkout</p>
+          <h2>Compra registrada</h2>
+        </div>
+        <span class="status-pill" [ngClass]="statusClass(checkoutResult.paymentStatus)">
+          {{ formatStatus(checkoutResult.paymentStatus) }}
+        </span>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-card">
+          <span>Order ID</span>
+          <strong>{{ checkoutResult.orderId }}</strong>
+        </div>
+        <div class="result-card">
+          <span>Transaction ID</span>
+          <strong>{{ checkoutResult.transactionId }}</strong>
+        </div>
+        <div class="result-card">
+          <span>Metodo de pago</span>
+          <strong>{{ checkoutResult.paymentMethod }}</strong>
+        </div>
+        <div class="result-card">
+          <span>Total pagado</span>
+          <strong>{{ checkoutResult.total | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+      </div>
+
+      <div class="status-row">
+        <div class="status-detail">
+          <span>Estado del pedido</span>
+          <strong class="status-pill" [ngClass]="statusClass(checkoutResult.orderStatus)">
+            {{ formatStatus(checkoutResult.orderStatus) }}
+          </strong>
+        </div>
+        <div class="status-detail">
+          <span>Estado logístico</span>
+          <strong class="status-pill" [ngClass]="statusClass(checkoutResult.shipmentStatus)">
+            {{ formatStatus(checkoutResult.shipmentStatus) }}
+          </strong>
+        </div>
+      </div>
+
+      <p class="message">{{ checkoutResult.message }}</p>
+
+      <div class="payment-summary" *ngIf="paymentSummary as summary">
+        <h3>{{ summary.title }}</h3>
+        <div class="payment-summary-grid">
+          <div class="summary-detail-card" *ngFor="let row of summary.rows">
+            <span>{{ row.label }}</span>
+            <strong>{{ row.value }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-products">
+        <h3>Productos comprados</h3>
+        <article class="result-product" *ngFor="let item of checkoutResult.items">
+          <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.title" />
+          <div class="result-copy">
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.quantity }} unidad(es)</span>
+            <small>ID producto: {{ item.productId }}</small>
+          </div>
+          <div class="result-pricing">
+            <span>{{ item.unitPrice | currency:'COP':'symbol-narrow':'1.0-0' }} c/u</span>
+            <strong>{{ item.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          </div>
+        </article>
+      </div>
     </article>
 
     <div class="guest-box" *ngIf="guestPromptOpen">

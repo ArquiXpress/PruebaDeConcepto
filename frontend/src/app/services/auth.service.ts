@@ -114,6 +114,10 @@ export class AuthService {
     );
   }
 
+  listUsers() {
+    return this.http.get<LoginResponse[]>('/api/auth/users');
+  }
+
   logout(): void {
     this.session.clear();
   }

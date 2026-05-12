@@ -1,11 +1,32 @@
 package com.arquixpress.marketplace.orders;
 
 import com.arquixpress.marketplace.payments.PaymentStatus;
+import com.arquixpress.marketplace.payments.PaymentTransaction;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
-public record CheckoutResponse(UUID orderId, OrderStatus orderStatus, PaymentStatus paymentStatus, BigDecimal total, String message) {
-    static CheckoutResponse from(OrderEntity order, PaymentStatus paymentStatus, String message) {
-        return new CheckoutResponse(order.id(), order.status(), paymentStatus, order.total(), message);
+public record CheckoutResponse(
+        UUID orderId,
+        OrderStatus orderStatus,
+        ShipmentStatus shipmentStatus,
+        PaymentStatus paymentStatus,
+        String paymentMethod,
+        String transactionId,
+        BigDecimal total,
+        List<CheckoutProductResponse> items,
+        String message) {
+
+    static CheckoutResponse from(OrderEntity order, PaymentTransaction payment, List<CheckoutProductResponse> items, String message) {
+        return new CheckoutResponse(
+                order.id(),
+                order.status(),
+                order.shipmentStatus(),
+                payment.status(),
+                payment.paymentMethod(),
+                payment.transactionId(),
+                order.total(),
+                items,
+                message);
     }
 }
