@@ -6,7 +6,7 @@ import { Product } from '../../models/product';
 import { CartService } from '../../services/cart.service';
 import { AuthService, LoginResponse } from '../../services/auth.service';
 import { CatalogService } from '../../services/catalog.service';
-import { CheckoutResponse, CheckoutService } from '../../services/checkout.service';
+import { CheckoutProduct, CheckoutResponse, CheckoutService } from '../../services/checkout.service';
 import { SessionService } from '../../services/session.service';
 
 const PAYMENT_METHOD_OPTIONS = [
@@ -98,7 +98,7 @@ export class CheckoutPageComponent implements OnInit {
   ngOnInit(): void {
     this.guestPromptOpen = !this.session.isLoggedIn();
 
-    this.catalog.search('', '', 0, 100).subscribe({
+    this.catalog.search('', '', 0, 1000).subscribe({
       next: (page) => {
         this.products = page.content;
       },
@@ -114,10 +114,33 @@ export class CheckoutPageComponent implements OnInit {
   }
 
   subtotal(): number {
+    const result = this.result();
+    if (result) {
+      return result.total;
+    }
     return this.cart.items().reduce((sum, item) => {
       const product = this.product(item.productId);
       return sum + (product?.price ?? 0) * item.quantity;
     }, 0);
+  }
+
+  summaryItems(): CheckoutProduct[] {
+    const result = this.result();
+    if (result) {
+      return result.items;
+    }
+    return this.cart.items().map((item) => {
+      const product = this.product(item.productId);
+      const unitPrice = product?.price ?? 0;
+      return {
+        productId: item.productId,
+        title: product?.title || item.productId,
+        imageUrl: product?.imageUrl || '',
+        quantity: item.quantity,
+        unitPrice,
+        subtotal: unitPrice * item.quantity,
+      };
+    });
   }
 
   product(productId: string): Product | undefined {

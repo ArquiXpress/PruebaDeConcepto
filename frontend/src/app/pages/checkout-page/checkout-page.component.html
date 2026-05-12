@@ -174,17 +174,17 @@
       <aside class="summary-card">
         <h2>Resumen del pedido</h2>
 
-        <div class="summary-list" *ngIf="cart.items().length; else emptyState">
-          <article class="summary-item" *ngFor="let item of cart.items()">
+        <div class="summary-list" *ngIf="summaryItems().length; else emptyState">
+          <article class="summary-item" *ngFor="let item of summaryItems()">
             <img
-              *ngIf="product(item.productId)?.imageUrl"
-              [src]="product(item.productId)?.imageUrl"
-              [alt]="product(item.productId)?.title || item.productId" />
+              *ngIf="item.imageUrl"
+              [src]="item.imageUrl"
+              [alt]="item.title" />
             <div class="summary-copy">
-              <strong>{{ product(item.productId)?.title || item.productId }}</strong>
+              <strong>{{ item.title }}</strong>
               <span>{{ item.quantity }} unidad(es)</span>
             </div>
-            <strong>{{ ((product(item.productId)?.price || 0) * item.quantity) | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+            <strong>{{ item.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
           </article>
         </div>
 
