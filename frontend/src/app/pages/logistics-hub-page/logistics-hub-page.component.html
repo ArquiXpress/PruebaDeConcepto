@@ -1,0 +1,163 @@
+<main class="page">
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h1>Hub de operación logística</h1>
+        <p class="muted">
+          Actualiza los estados de envío de los pedidos asignados a tu sede según las transiciones
+          autorizadas: Preparación → En ruta → Entregado.
+        </p>
+      </div>
+      <a routerLink="/">Volver al inicio</a>
+    </div>
+
+    <div
+      *ngIf="session.isOperator() || session.isAdmin() || session.hasRole('SUPERADMIN'); else denied"
+    >
+      <section class="operator-card" *ngIf="context() as ctx">
+        <div class="operator-avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+            <path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div class="operator-info">
+          <strong>{{ session.currentUser()?.displayName }}</strong>
+          <p class="muted">Rol activo: {{ session.currentUser()?.roles?.join(', ') }}</p>
+          <p *ngIf="ctx.centerName; else noCenter" class="city-chip">
+            <span class="pin" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="1.7" />
+                <circle cx="12" cy="9" r="2.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+              </svg>
+            </span>
+            Sede: <strong>{{ ctx.centerName }}</strong> · {{ ctx.centerCity }}
+          </p>
+          <ng-template #noCenter>
+            <p class="muted city-chip">Sin sede asignada aún.</p>
+          </ng-template>
+        </div>
+        <div class="operator-summary">
+          <span class="total-num"><em>{{ summary().total }}</em> pedidos</span>
+          <span class="pill prep"> Prep: {{ summary().preparation }}</span>
+          <span class="pill route"> En ruta: {{ summary().inRoute }}</span>
+          <span class="pill ok"> Entregado: {{ summary().delivered }}</span>
+        </div>
+      </section>
+
+      <p class="notice" *ngIf="notice()">{{ notice() }}</p>
+      <p class="error-msg" *ngIf="error()">{{ error() }}</p>
+
+      <div class="loading" *ngIf="loading()">Cargando pedidos...</div>
+
+      <section class="empty" *ngIf="!loading() && orders().length === 0">
+        <div class="empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M5 7h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        </div>
+        <h3>Sin pedidos por procesar</h3>
+        <p>No hay pedidos pagados asignados a tu centro en este momento.</p>
+        <button class="secondary" type="button" (click)="reload()">Recargar</button>
+      </section>
+
+      <section class="orders" *ngIf="!loading() && orders().length > 0">
+        <article class="order-card" *ngFor="let order of orders()">
+          <header class="order-head">
+            <div>
+              <span class="order-id">Pedido #{{ shortId(order.orderId) }}</span>
+              <p class="muted">Centro: {{ centerLabel(order.logisticsCenterId) }}</p>
+            </div>
+            <div class="order-total">{{ formatMoney(order.total) }}</div>
+          </header>
+
+          <!-- Animated visual for current state -->
+          <div class="shipment-visual"
+               [class.state-prep]="order.shipmentStatus === 'PREPARATION'"
+               [class.state-route]="order.shipmentStatus === 'IN_ROUTE'"
+               [class.state-ok]="order.shipmentStatus === 'DELIVERED'">
+
+            <div class="visual-stage">
+              <!-- PREPARATION: box being packed -->
+              <div class="scene prep-scene" *ngIf="order.shipmentStatus === 'PREPARATION'">
+                <div class="desk"></div>
+                <div class="box">
+                  <div class="flap flap-left"></div>
+                  <div class="flap flap-right"></div>
+                  <span class="box-icon">📦</span>
+                </div>
+                <div class="sparkle s1"></div>
+                <div class="sparkle s2"></div>
+                <div class="sparkle s3"></div>
+              </div>
+
+              <!-- IN_ROUTE: truck moving -->
+              <div class="scene route-scene" *ngIf="order.shipmentStatus === 'IN_ROUTE'">
+                <div class="road"></div>
+                <div class="truck">
+                  <span class="truck-icon">🚚</span>
+                  <div class="wheel wl"></div>
+                  <div class="wheel wr"></div>
+                </div>
+                <div class="dust d1"></div>
+                <div class="dust d2"></div>
+              </div>
+
+              <!-- DELIVERED: package at house -->
+              <div class="scene ok-scene" *ngIf="order.shipmentStatus === 'DELIVERED'">
+                <span class="house-icon">🏠</span>
+                <span class="pkg-icon">📦</span>
+                <span class="check-icon">✅</span>
+              </div>
+            </div>
+
+            <div class="visual-caption">
+              <strong>{{ visuals[order.shipmentStatus].title }}</strong>
+              <p>{{ visuals[order.shipmentStatus].description }}</p>
+            </div>
+          </div>
+
+          <!-- Stepper -->
+          <ol class="stepper">
+            <li *ngFor="let step of STATES; let i = index"
+                [class.active]="i <= getStepIndex(order.shipmentStatus)"
+                [class.current]="step.key === order.shipmentStatus">
+              <span class="dot"></span>
+              <span class="label">{{ step.label }}</span>
+            </li>
+          </ol>
+
+          <!-- Items -->
+          <div class="items-list">
+            <p class="muted items-title">Items incluidos:</p>
+            <ul>
+              <li *ngFor="let line of order.lines">
+                x{{ line.quantity }} · {{ formatMoney(line.unitPrice) }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- Action -->
+          <footer class="actions">
+            <button
+              class="primary"
+              type="button"
+              [disabled]="!nextStatus(order.shipmentStatus) || updating() === order.orderId"
+              (click)="advance(order)"
+            >
+              <ng-container *ngIf="nextStatus(order.shipmentStatus) as next; else done">
+                {{ updating() === order.orderId ? 'Actualizando...' : 'Avanzar a ' + visuals[next].title }}
+              </ng-container>
+              <ng-template #done>Ciclo completado ✓</ng-template>
+            </button>
+          </footer>
+        </article>
+      </section>
+    </div>
+
+    <ng-template #denied>
+      <div class="empty">
+        <h3>Acceso restringido</h3>
+        <p>Este hub está disponible solo para operadores logísticos y administradores.</p>
+      </div>
+    </ng-template>
+  </section>
+</main>

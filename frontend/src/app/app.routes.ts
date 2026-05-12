@@ -12,6 +12,7 @@ import { ProductDetailPageComponent } from './pages/product-detail-page/product-
 import { PurchasesPageComponent } from './pages/purchases-page/purchases-page.component';
 import { FavoritesPageComponent } from './pages/favorites-page/favorites-page.component';
 import { PqrsPageComponent } from './pages/pqrs-page/pqrs-page.component';
+import { LogisticsHubPageComponent } from './pages/logistics-hub-page/logistics-hub-page.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -27,4 +28,5 @@ export const routes: Routes = [
   { path: 'carrito', component: CartPageComponent },
   { path: 'checkout', component: CheckoutPageComponent },
   { path: 'operaciones', component: OperationsPageComponent },
+  { path: 'logistica', component: LogisticsHubPageComponent },
 ];

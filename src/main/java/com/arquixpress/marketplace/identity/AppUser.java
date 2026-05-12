@@ -58,21 +58,10 @@ public class AppUser {
         return user;
     }
 
-    public UUID id() {
-        return id;
-    }
-
-    public String email() {
-        return email;
-    }
-
-    public String password() {
-        return password;
-    }
-
-    public String displayName() {
-        return displayName;
-    }
+    public UUID id() { return id; }
+    public String email() { return email; }
+    public String password() { return password; }
+    public String displayName() { return displayName; }
 
     public String roles() {
         return roles;

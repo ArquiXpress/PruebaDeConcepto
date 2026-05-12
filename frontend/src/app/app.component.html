@@ -26,6 +26,9 @@
       <a routerLink="/operaciones">Vender</a>
       <a routerLink="/pqrs">Ayuda/PQR</a>
       <a *ngIf="session.canAccessOperations()" routerLink="/operaciones">Operaciones</a>
+      <a *ngIf="session.isOperator() || session.isAdmin() || session.hasRole('SUPERADMIN')" routerLink="/logistica">
+        Logistica
+      </a>
     </nav>
 
     <form class="topbar-search" (ngSubmit)="search()">
