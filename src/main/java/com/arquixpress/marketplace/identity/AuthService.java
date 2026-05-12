@@ -106,7 +106,7 @@ public class AuthService {
         users.save(user);
         resetEmailService.sendPasswordReset(user.email(), user.displayName(), token, expiresAt);
         return new PasswordResetResponse(true, expiresAt,
-                "Te enviamos un correo con el token para restablecer la clave.");
+                "Te enviamos un correo con el enlace para restablecer la clave.");
     }
 
     public AuthUser confirmPasswordReset(PasswordResetConfirmRequest request) {

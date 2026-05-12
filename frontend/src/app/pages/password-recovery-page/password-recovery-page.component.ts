@@ -13,8 +13,9 @@ import { AuthService } from '../../services/auth.service';
 })
 export class PasswordRecoveryPageComponent {
   email = '';
-  token = '';
+  private readonly token: string;
   newPassword = '';
+  confirmPassword = '';
   loading = false;
   resetting = false;
   message = '';
@@ -28,6 +29,10 @@ export class PasswordRecoveryPageComponent {
     this.token = route.snapshot.queryParamMap.get('token') ?? '';
   }
 
+  hasResetToken(): boolean {
+    return this.token.length > 0;
+  }
+
   requestReset(): void {
     this.loading = true;
     this.error = '';
@@ -39,12 +44,20 @@ export class PasswordRecoveryPageComponent {
       },
       error: () => {
         this.loading = false;
-        this.error = 'No se pudo generar el token de recuperacion.';
+        this.error = 'No se pudo enviar el enlace de recuperacion.';
       },
     });
   }
 
   confirmReset(): void {
+    if (!this.token) {
+      this.error = 'El enlace de recuperacion no es valido.';
+      return;
+    }
+    if (this.newPassword !== this.confirmPassword) {
+      this.error = 'Las claves no coinciden.';
+      return;
+    }
     this.resetting = true;
     this.error = '';
     this.auth.confirmPasswordReset(this.token, this.newPassword).subscribe({

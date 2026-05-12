@@ -50,13 +50,13 @@ public class PasswordResetEmailService {
 
                 Recibimos una solicitud para restablecer tu clave de ArquiXpress.
 
-                Token: %s
-                Enlace: %s
+                Abre este enlace para definir una nueva clave:
+                %s
 
-                Este token expira en: %s
+                Este enlace expira en: %s
 
                 Si no solicitaste este cambio, ignora este correo.
-                """.formatted(displayName, token, resetUrl, expiresAt));
+                """.formatted(displayName, resetUrl, expiresAt));
         sender.send(message);
     }
 }
