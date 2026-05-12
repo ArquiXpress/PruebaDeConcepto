@@ -63,4 +63,28 @@ public class NotificationOutbox {
         status = attempts >= 5 ? OutboxStatus.FAILED : OutboxStatus.PENDING;
         lastAttemptAt = Instant.now();
     }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public OutboxStatus getStatus() {
+    return status;
+    }
+
+    public UUID id() {
+        return id;
+    }
+
+    public String eventType() {
+        return eventType;
+    }
+
+    public String payload() {
+        return payload;
+    }
 }

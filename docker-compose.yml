@@ -100,6 +100,10 @@ services:
       MAIL_PORT: "1025"
       MAIL_SMTP_AUTH: "false"
       MAIL_SMTP_STARTTLS: "false"
+      NOTIFICATIONS_ENABLED: "true"
+      RESEND_API_KEY: ${RESEND_API_KEY:-re_test_key}
+      NOTIFICATIONS_FROM_EMAIL: ${NOTIFICATIONS_FROM_EMAIL:-onboarding@resend.dev}
+      APP_URL: "http://localhost:4200"
     expose:
       - "8080"
     depends_on:

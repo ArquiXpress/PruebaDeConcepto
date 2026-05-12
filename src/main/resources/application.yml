@@ -63,6 +63,9 @@ app:
   notifications:
     enabled: ${NOTIFICATIONS_ENABLED:true}
     retry-delay: ${NOTIFICATIONS_RETRY_DELAY:5000}
+    resend-api-key: ${RESEND_API_KEY:re_test_key}
+    from-email: ${NOTIFICATIONS_FROM_EMAIL:noreply@arquixpress.com}
+    app-url: ${APP_URL:http://localhost:4200}
   mail:
     enabled: ${APP_MAIL_ENABLED:false}
     from: ${APP_MAIL_FROM:no-reply@arquixpress.com}
