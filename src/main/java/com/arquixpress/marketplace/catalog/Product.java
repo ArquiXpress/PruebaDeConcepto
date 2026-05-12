@@ -1,5 +1,9 @@
 package com.arquixpress.marketplace.catalog;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -7,13 +11,11 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Table(name = "product")
 public class Product {
+
     @Id
     private UUID id;
 
@@ -55,6 +57,28 @@ public class Product {
     protected Product() {
     }
 
+    public Product(
+            UUID sellerId,
+            String title,
+            String description,
+            String category,
+            String imageUrl,
+            BigDecimal price,
+            int stockAvailable
+    ) {
+        this.id = UUID.randomUUID();
+        this.sellerId = sellerId;
+        this.title = title.trim();
+        this.description = description.trim();
+        this.category = category.trim().toLowerCase();
+        this.imageUrl = imageUrl.trim();
+        this.imageUrls = null;
+        this.price = price;
+        this.stockAvailable = Math.max(0, stockAvailable);
+        this.status = ProductStatus.ACTIVE;
+        this.createdAt = Instant.now();
+    }
+
     public UUID id() { return id; }
     public UUID sellerId() { return sellerId; }
     public String title() { return title; }
@@ -67,4 +91,35 @@ public class Product {
     public ProductStatus status() { return status; }
     public long version() { return version; }
     public Instant createdAt() { return createdAt; }
+
+    public void updateDetails(
+            String title,
+            String description,
+            String category,
+            String imageUrl,
+            BigDecimal price,
+            int stockAvailable,
+            ProductStatus status
+    ) {
+        this.title = title.trim();
+        this.description = description.trim();
+        this.category = category.trim().toLowerCase();
+        this.imageUrl = imageUrl.trim();
+        this.imageUrls = null;
+        this.price = price;
+        this.stockAvailable = Math.max(0, stockAvailable);
+        this.status = status;
+    }
+
+    public void updateStock(int stockAvailable) {
+        this.stockAvailable = Math.max(0, stockAvailable);
+    }
+
+    public void activate() {
+        this.status = ProductStatus.ACTIVE;
+    }
+
+    public void deactivate() {
+        this.status = ProductStatus.INACTIVE;
+    }
 }
