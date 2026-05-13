@@ -44,6 +44,42 @@ public class EmailService {
 
     // ── Cambio de contraseña ─────────────────────────────────────────────────
 
+    public void sendSellerApproved(String toEmail, String displayName) {
+        String subject = "Tu cuenta vendedora fue aprobada";
+        String html = """
+                <h2>Hola, %s</h2>
+                <p>Tu solicitud para vender en <strong>ArquiXpress</strong> fue aprobada.</p>
+                <p>Ya puedes administrar publicaciones desde tu portal de vendedor.</p>
+                <a href="%s/vendedor" style="background:#1a73e8;color:white;padding:10px 20px;
+                   border-radius:6px;text-decoration:none;">Ir al portal vendedor</a>
+                """.formatted(displayName, appUrl);
+        send(toEmail, subject, html);
+    }
+
+    public void sendSellerRejected(String toEmail, String displayName) {
+        String subject = "Tu solicitud de vendedor fue revisada";
+        String html = """
+                <h2>Hola, %s</h2>
+                <p>Tu solicitud para vender en ArquiXpress fue revisada y no fue aprobada.</p>
+                <p>Puedes revisar la informacion enviada y crear una nueva solicitud desde el centro de vendedores.</p>
+                <a href="%s/operaciones" style="background:#1a73e8;color:white;padding:10px 20px;
+                   border-radius:6px;text-decoration:none;">Ver centro de vendedores</a>
+                """.formatted(displayName, appUrl);
+        send(toEmail, subject, html);
+    }
+
+    public void sendSellerSale(String toEmail, String displayName, String orderId) {
+        String subject = "Nueva venta en ArquiXpress - Orden #" + shortId(orderId);
+        String html = """
+                <h2>Hola, %s</h2>
+                <p>Recibiste una nueva compra asociada a la orden <strong>#%s</strong>.</p>
+                <p>Revisa tu portal de vendedor para gestionar tus productos y stock.</p>
+                <a href="%s/vendedor" style="background:#1a73e8;color:white;padding:10px 20px;
+                   border-radius:6px;text-decoration:none;">Ir al portal vendedor</a>
+                """.formatted(displayName, shortId(orderId), appUrl);
+        send(toEmail, subject, html);
+    }
+
     public void sendPasswordChanged(String toEmail, String displayName) {
         String subject = "Tu contraseña de ArquiXpress fue cambiada";
         String html = """

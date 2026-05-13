@@ -37,4 +37,62 @@
       <small>Vendido por {{ item.sellerId || 'ArquiXpress' }}</small>
     </aside>
   </section>
+
+  <section class="questions" *ngIf="product() as item">
+    <div class="questions-head">
+      <div>
+        <p class="eyebrow">Preguntas y respuestas</p>
+        <h2>Consulta al vendedor</h2>
+      </div>
+    </div>
+
+    <div class="ask-box" *ngIf="!canAnswer(item); else sellerAnswerMode">
+      <textarea [(ngModel)]="questionText" rows="3" maxlength="700"
+        placeholder="Pregunta por tallas, garantias, disponibilidad o detalles del producto"></textarea>
+      <button type="button" class="primary" (click)="askQuestion(item.id)" [disabled]="questionLoading">
+        {{ questionLoading ? 'Enviando...' : 'Preguntar' }}
+      </button>
+      <p class="muted" *ngIf="questionMessage">{{ questionMessage }}</p>
+      <p class="error" *ngIf="questionError">{{ questionError }}</p>
+    </div>
+    <ng-template #sellerAnswerMode>
+      <div class="ask-box seller-mode">
+        <strong>Estas viendo tu publicacion como vendedor.</strong>
+        <p class="muted">Responde las preguntas pendientes directamente debajo de cada consulta.</p>
+        <p class="muted" *ngIf="questionMessage">{{ questionMessage }}</p>
+        <p class="error" *ngIf="questionError">{{ questionError }}</p>
+      </div>
+    </ng-template>
+
+    <div class="question-list" *ngIf="questions().length; else noQuestions">
+      <article class="question" *ngFor="let question of questions()">
+        <strong>{{ question.question }}</strong>
+        <p *ngIf="question.answer; else pendingAnswer">{{ question.answer }}</p>
+        <ng-template #pendingAnswer>
+          <div *ngIf="canAnswer(item); else buyerPendingAnswer" class="answer-box">
+            <textarea
+              rows="3"
+              maxlength="1200"
+              [(ngModel)]="answerDrafts[question.id]"
+              placeholder="Escribe una respuesta publica para el comprador"
+            ></textarea>
+            <button
+              type="button"
+              class="primary"
+              (click)="answerQuestion(item.id, question)"
+              [disabled]="answeringId === question.id"
+            >
+              {{ answeringId === question.id ? 'Publicando...' : 'Responder' }}
+            </button>
+          </div>
+          <ng-template #buyerPendingAnswer>
+            <p class="muted">El vendedor aun no responde.</p>
+          </ng-template>
+        </ng-template>
+      </article>
+    </div>
+    <ng-template #noQuestions>
+      <p class="muted">Aun no hay preguntas sobre este producto.</p>
+    </ng-template>
+  </section>
 </main>

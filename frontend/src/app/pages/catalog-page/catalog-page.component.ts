@@ -53,7 +53,7 @@ export class CatalogPageComponent implements OnInit {
   loadCatalog(): void {
     this.loading = true;
     this.error = '';
-    this.catalog.search(this.query, this.category, 0, 100).subscribe({
+    this.catalog.search(this.query, this.category, 0, 200).subscribe({
       next: (page) => {
         this.page.set(page);
         this.loading = false;

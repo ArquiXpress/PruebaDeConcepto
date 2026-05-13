@@ -24,11 +24,6 @@
       <a routerLink="/catalogo" [queryParams]="{ oferta: true }">Ofertas</a>
       <a routerLink="/catalogo" [queryParams]="{ cupones: true }">Cupones</a>
       <a routerLink="/operaciones">Vender</a>
-      <a routerLink="/pqrs">Ayuda/PQR</a>
-      <a *ngIf="session.canAccessOperations()" routerLink="/operaciones">Operaciones</a>
-      <a *ngIf="session.isOperator() || session.isAdmin() || session.hasRole('SUPERADMIN')" routerLink="/logistica">
-        Logistica
-      </a>
     </nav>
 
     <form class="topbar-search" (ngSubmit)="search()">
@@ -42,33 +37,65 @@
       </button>
     </form>
 
-    <nav class="account-nav" aria-label="Cuenta y compras">
-      <ng-container *ngIf="session.isLoggedIn(); else guestActions">
-        <a routerLink="/perfil">Mi perfil</a>
-        <a routerLink="/mis-compras">Mis compras</a>
-        <a routerLink="/favoritos">Favoritos</a>
+    <div class="topbar-menu">
+      <a *ngIf="!session.isLoggedIn()" routerLink="/login" class="login-action">Iniciar sesion</a>
+      <button class="menu-toggle" type="button" (click)="toggleMenu()" aria-label="Abrir menu"
+        [attr.aria-expanded]="menuOpen()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="menu-backdrop" *ngIf="menuOpen()" (click)="closeMenu()"></div>
+  <aside class="side-menu" *ngIf="menuOpen()" aria-label="Menu de navegacion">
+    <header>
+      <div>
+        <strong>Menu</strong>
+        <small *ngIf="session.currentUser() as user">{{ user.displayName }}</small>
+        <small *ngIf="!session.isLoggedIn()">Accede a tu cuenta</small>
+      </div>
+      <button type="button" class="icon-btn" (click)="closeMenu()" aria-label="Cerrar menu">
+        <svg viewBox="0 0 24 24">
+          <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" /></svg>
+      </button>
+    </header>
+
+    <nav>
+      <a routerLink="/pqrs" (click)="closeMenu()">Ayuda/PQR</a>
+      <a *ngIf="session.isSeller()" routerLink="/vendedor" (click)="closeMenu()">Portal vendedor</a>
+      <a *ngIf="session.canAccessOperations()" routerLink="/operaciones" (click)="closeMenu()">Operaciones</a>
+      <a *ngIf="session.isOperator() || session.isAdmin() || session.hasRole('SUPERADMIN')" routerLink="/logistica"
+        (click)="closeMenu()">Logistica</a>
+
+      <ng-container *ngIf="session.isLoggedIn(); else menuGuestActions">
+        <a routerLink="/perfil" (click)="closeMenu()">Mi perfil</a>
+        <a routerLink="/mis-compras" (click)="closeMenu()">Mis compras</a>
+        <a routerLink="/favoritos" (click)="closeMenu()">Favoritos</a>
+        <a routerLink="/notificaciones" (click)="closeMenu()">Notificaciones</a>
         <button class="cart-link" type="button" (click)="openCart()">
           Carrito
           <span class="counter">{{ cart.count() }}</span>
         </button>
         <button *ngIf="session.isAdmin() || session.hasRole('SUPERADMIN')" class="admin-pill" type="button"
-          (click)="adminUI.open()" aria-label="Panel de Admin">
+          (click)="closeMenu(); adminUI.open()" aria-label="Panel de Admin">
           Admin
         </button>
         <button class="logout-link" type="button" (click)="logout()">Salir</button>
       </ng-container>
 
-      <ng-template #guestActions>
-        <a routerLink="/registro">Crea tu cuenta</a>
-        <a routerLink="/login">Ingresa</a>
-        <button type="button" (click)="showGuestPrompt()">Mis compras</button>
+      <ng-template #menuGuestActions>
+        <a routerLink="/registro" (click)="closeMenu()">Crea tu cuenta</a>
+        <a routerLink="/login" (click)="closeMenu()">Iniciar sesion</a>
+        <button type="button" (click)="closeMenu(); showGuestPrompt()">Mis compras</button>
         <button class="cart-link" type="button" (click)="openCart()">
           Carrito
           <span class="counter">{{ cart.count() }}</span>
         </button>
       </ng-template>
     </nav>
-  </header>
+  </aside>
 
   <router-outlet />
 

@@ -5,6 +5,9 @@ import com.arquixpress.marketplace.identity.AppUser;
 import com.arquixpress.marketplace.identity.AppUserRepository;
 import com.arquixpress.marketplace.identity.CurrentUser;
 import com.arquixpress.marketplace.identity.Role;
+import com.arquixpress.marketplace.notifications.NotificationOutbox;
+import com.arquixpress.marketplace.notifications.NotificationOutboxRepository;
+import com.arquixpress.marketplace.notifications.NotificationService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,12 +31,16 @@ public class SellerApplicationService {
     private final NamedParameterJdbcTemplate jdbc;
     private final ObjectMapper mapper;
     private final AppUserRepository userRepository;
+    private final NotificationService notifications;
+    private final NotificationOutboxRepository outbox;
 
     public SellerApplicationService(NamedParameterJdbcTemplate jdbc, ObjectMapper mapper,
-            AppUserRepository userRepository) {
+            AppUserRepository userRepository, NotificationService notifications, NotificationOutboxRepository outbox) {
         this.jdbc = jdbc;
         this.mapper = mapper;
         this.userRepository = userRepository;
+        this.notifications = notifications;
+        this.outbox = outbox;
     }
 
     public SellerApplicationResponse create(CurrentUser user, SellerApplicationRequest request) {
@@ -129,6 +136,11 @@ public class SellerApplicationService {
                         .addValue("reviewedAt", Timestamp.from(reviewedAt))
                         .addValue("reviewNote", clean(request == null ? null : request.note()))
                         .addValue("approvedProductCount", application.products().size()));
+        notifications.notify(application.userId(), "SELLER_APPROVED", "Solicitud de vendedor aprobada",
+                "Tu cuenta ya puede vender en ArquiXpress. Entra al portal de vendedor para gestionar productos.",
+                "/vendedor");
+        outbox.save(new NotificationOutbox("SELLER_APPLICATION", applicationId, "SELLER_APPROVED",
+                "{\"userId\":\"" + application.userId() + "\"}"));
         return findForReview(applicationId);
     }
 
@@ -153,6 +165,11 @@ public class SellerApplicationService {
                         .addValue("reviewedBy", reviewer.id())
                         .addValue("reviewedAt", Timestamp.from(reviewedAt))
                         .addValue("reviewNote", clean(request == null ? null : request.note())));
+        notifications.notify(application.userId(), "SELLER_REJECTED", "Solicitud de vendedor rechazada",
+                "Tu solicitud fue revisada y no fue aprobada. Revisa la nota del administrador o envia una nueva solicitud.",
+                "/operaciones");
+        outbox.save(new NotificationOutbox("SELLER_APPLICATION", applicationId, "SELLER_REJECTED",
+                "{\"userId\":\"" + application.userId() + "\"}"));
         return findForReview(applicationId);
     }
 

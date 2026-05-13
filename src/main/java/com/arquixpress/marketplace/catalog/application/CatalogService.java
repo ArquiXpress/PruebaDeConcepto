@@ -48,7 +48,7 @@ public class CatalogService {
     public Page<ProductSummary> search(String query, String category, int page, int size) {
         String normalizedQuery = query == null || query.isBlank() ? null : query.trim();
         String normalizedCategory = category == null || category.isBlank() ? null : category.trim().toLowerCase();
-        PageRequest pageable = PageRequest.of(page, Math.min(size, 100));
+        PageRequest pageable = PageRequest.of(page, Math.min(size, 200));
         if (readReplicaEnabled && catalogReadReplica != null) {
             try {
                 return searchReplica(normalizedQuery, normalizedCategory, pageable);

@@ -1,0 +1,32 @@
+<main class="page">
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="eyebrow">Centro de actividad</p>
+        <h1>Notificaciones</h1>
+      </div>
+      <button type="button" class="ghost" (click)="markAllRead()">Marcar todas como leidas</button>
+    </div>
+
+    <p class="muted" *ngIf="loading()">Cargando notificaciones...</p>
+    <p class="error" *ngIf="error()">{{ error() }}</p>
+
+    <div class="empty" *ngIf="!loading() && !notifications().length">
+      <h3>No tienes notificaciones</h3>
+      <p>Las aprobaciones, compras y respuestas apareceran aqui.</p>
+    </div>
+
+    <article class="notification" *ngFor="let notification of notifications()" [class.unread]="!notification.read">
+      <div>
+        <span class="type">{{ notification.type }}</span>
+        <h2>{{ notification.title }}</h2>
+        <p>{{ notification.body }}</p>
+        <small>{{ notification.createdAt | date:'short' }}</small>
+      </div>
+      <div class="actions">
+        <a *ngIf="notification.actionUrl" [routerLink]="notification.actionUrl" (click)="markRead(notification)">Abrir</a>
+        <button type="button" class="ghost" (click)="markRead(notification)" *ngIf="!notification.read">Leida</button>
+      </div>
+    </article>
+  </section>
+</main>

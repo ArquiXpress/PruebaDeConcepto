@@ -7,6 +7,7 @@ import com.arquixpress.marketplace.logistics.LogisticsCenter;
 import com.arquixpress.marketplace.logistics.LogisticsCenterRepository;
 import com.arquixpress.marketplace.notifications.NotificationOutbox;
 import com.arquixpress.marketplace.notifications.NotificationOutboxRepository;
+import com.arquixpress.marketplace.notifications.NotificationService;
 import com.arquixpress.marketplace.payments.PaymentGatewayClient;
 import com.arquixpress.marketplace.payments.PaymentGatewayResult;
 import com.arquixpress.marketplace.payments.PaymentStatus;
@@ -31,17 +32,19 @@ public class CheckoutService {
     private final PaymentTransactionRepository payments;
     private final PaymentGatewayClient paymentGateway;
     private final NotificationOutboxRepository outbox;
+    private final NotificationService notifications;
     private final LogisticsCenterRepository centers;
     private final TransactionTemplate tx;
 
     public CheckoutService(ProductRepository products, OrderRepository orders, PaymentTransactionRepository payments,
             PaymentGatewayClient paymentGateway, NotificationOutboxRepository outbox,
-            LogisticsCenterRepository centers, TransactionTemplate tx) {
+            NotificationService notifications, LogisticsCenterRepository centers, TransactionTemplate tx) {
         this.products = products;
         this.orders = orders;
         this.payments = payments;
         this.paymentGateway = paymentGateway;
         this.outbox = outbox;
+        this.notifications = notifications;
         this.centers = centers;
         this.tx = tx;
     }
@@ -140,14 +143,35 @@ public class CheckoutService {
         if (result.status() == PaymentStatus.APPROVED) {
             order.markPaid();
             outbox.save(new NotificationOutbox("ORDER", order.id(), "ORDER_PAID", "{\"orderId\":\"" + order.id() + "\"}"));
+            notifications.notify(order.buyerId(), "ORDER_PAID", "Compra confirmada",
+                    "Tu compra fue aprobada y ya entro al proceso logistico.", "/mis-compras");
+            notifySellersForSale(order);
         } else if (result.status() == PaymentStatus.REJECTED) {
             order.markRejected();
             for (OrderLine line : order.lines()) {
                 products.releaseStock(line.productId(), line.quantity());
             }
             outbox.save(new NotificationOutbox("ORDER", order.id(), "PAYMENT_REJECTED", "{\"orderId\":\"" + order.id() + "\"}"));
+            notifications.notify(order.buyerId(), "PAYMENT_REJECTED", "Pago rechazado",
+                    "No pudimos aprobar el pago de tu compra. Puedes intentar de nuevo con otro metodo.", "/mis-compras");
         }
         return buildCheckoutResponse(order, payment, result.message());
+    }
+
+    private void notifySellersForSale(OrderEntity order) {
+        var productById = products.findAllById(order.lines().stream().map(OrderLine::productId).distinct().toList()).stream()
+                .collect(Collectors.toMap(Product::id, Function.identity()));
+        order.lines().stream()
+                .map(line -> productById.get(line.productId()))
+                .filter(product -> product != null)
+                .collect(Collectors.groupingBy(Product::sellerId, Collectors.counting()))
+                .forEach((sellerId, itemCount) -> {
+                    notifications.notify(sellerId, "SELLER_SALE", "Vendiste un producto",
+                            "Recibiste una compra con " + itemCount + " producto(s). Revisa tu portal de vendedor.",
+                            "/vendedor");
+                    outbox.save(new NotificationOutbox("ORDER", order.id(), "SELLER_SALE",
+                            "{\"orderId\":\"" + order.id() + "\",\"sellerId\":\"" + sellerId + "\"}"));
+                });
     }
 
     private OrderEntity findOrder(UUID orderId) {

@@ -3,6 +3,7 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Product, ProductStatus } from '../../models/product';
+import { ProductQuestion, ProductQuestionService } from '../../services/product-question.service';
 import { SellerProductPayload, SellerProductService } from '../../services/seller-product.service';
 import { SessionService } from '../../services/session.service';
 
@@ -27,9 +28,14 @@ export class SellerPortalComponent implements OnInit {
   readonly products = signal<Product[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
+  readonly questionsLoading = signal(false);
   readonly error = signal('');
   readonly success = signal('');
+  readonly questionError = signal('');
   readonly editingId = signal<string | null>(null);
+  readonly questions = signal<ProductQuestion[]>([]);
+  readonly answeringId = signal<string | null>(null);
+  answerDrafts: Record<string, string> = {};
 
   readonly categories = [
     'tecnologia',
@@ -62,13 +68,23 @@ export class SellerPortalComponent implements OnInit {
     this.products().filter((product) => product.stockAvailable <= 5)
   );
 
+  readonly pendingQuestions = computed(() =>
+    this.questions().filter((question) => !question.answer)
+  );
+
+  readonly answeredQuestions = computed(() =>
+    this.questions().filter((question) => question.answer)
+  );
+
   constructor(
     private readonly sellerProducts: SellerProductService,
+    private readonly productQuestions: ProductQuestionService,
     public readonly session: SessionService
   ) {}
 
   ngOnInit(): void {
     this.loadProducts();
+    this.loadQuestions();
   }
 
   loadProducts(): void {
@@ -83,6 +99,45 @@ export class SellerPortalComponent implements OnInit {
       error: () => {
         this.error.set('No se pudieron cargar tus productos. Verifica que hayas iniciado sesión como vendedor.');
         this.loading.set(false);
+      },
+    });
+  }
+
+  loadQuestions(): void {
+    this.questionsLoading.set(true);
+    this.questionError.set('');
+
+    this.productQuestions.listForSeller().subscribe({
+      next: (questions) => {
+        this.questions.set(questions);
+        this.questionsLoading.set(false);
+      },
+      error: () => {
+        this.questionError.set('No se pudieron cargar las preguntas de tus productos.');
+        this.questionsLoading.set(false);
+      },
+    });
+  }
+
+  answerQuestion(question: ProductQuestion): void {
+    const answer = (this.answerDrafts[question.id] || '').trim();
+    if (!answer) {
+      this.questionError.set('Escribe una respuesta antes de publicarla.');
+      return;
+    }
+
+    this.answeringId.set(question.id);
+    this.questionError.set('');
+    this.productQuestions.answer(question.id, answer).subscribe({
+      next: () => {
+        delete this.answerDrafts[question.id];
+        this.success.set('Respuesta publicada.');
+        this.answeringId.set(null);
+        this.loadQuestions();
+      },
+      error: () => {
+        this.questionError.set('No se pudo publicar la respuesta.');
+        this.answeringId.set(null);
       },
     });
   }
@@ -173,6 +228,14 @@ export class SellerPortalComponent implements OnInit {
 
   trackById(_: number, product: Product): string {
     return product.id;
+  }
+
+  trackQuestionById(_: number, question: ProductQuestion): string {
+    return question.id;
+  }
+
+  productTitle(productId: string): string {
+    return this.products().find((product) => product.id === productId)?.title || 'Producto';
   }
 
   private isValidForm(): boolean {

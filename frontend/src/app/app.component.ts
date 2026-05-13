@@ -24,6 +24,7 @@ export class AppComponent {
   searchTerm = '';
   productCache = signal<Map<string, Product>>(new Map());
   guestPromptOpen = signal(false);
+  menuOpen = signal(false);
 
   constructor(
     public readonly session: SessionService,
@@ -82,7 +83,16 @@ export class AppComponent {
   }
 
   openCart(): void {
+    this.closeMenu();
     this.cartUI.toggle();
+  }
+
+  toggleMenu(): void {
+    this.menuOpen.update((open) => !open);
+  }
+
+  closeMenu(): void {
+    this.menuOpen.set(false);
   }
 
   userAddress(): string {
@@ -92,12 +102,14 @@ export class AppComponent {
 
   search(): void {
     const query = this.searchTerm.trim();
+    this.closeMenu();
     this.router.navigate(['/catalogo'], {
       queryParams: query ? { query } : {},
     });
   }
 
   logout(): void {
+    this.closeMenu();
     this.auth.logout();
     this.cart.clear();
     this.cartUI.close();

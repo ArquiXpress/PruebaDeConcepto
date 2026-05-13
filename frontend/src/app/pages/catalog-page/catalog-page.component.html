@@ -34,7 +34,7 @@
           <button type="button" class="ghost" (click)="toggleFavorite(product)">
             {{ favorites.has(product.id) ? 'Quitar favorito' : 'Favorito' }}
           </button>
-          <span class="muted">En carrito: {{ cart.quantityFor(product.id) }}</span>
+          <span class="cart-quantity">En carrito: {{ cart.quantityFor(product.id) }}</span>
         </div>
       </article>
     </div>

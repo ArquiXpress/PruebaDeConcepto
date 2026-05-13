@@ -78,6 +78,18 @@ class NotificationPublisher {
                         email.sendPasswordChanged(u.email(), u.displayName()));
             }
 
+            case "SELLER_APPROVED" -> {
+                String userId = payload.get("userId").asText();
+                findUser(userId).ifPresent(u ->
+                        email.sendSellerApproved(u.email(), u.displayName()));
+            }
+
+            case "SELLER_REJECTED" -> {
+                String userId = payload.get("userId").asText();
+                findUser(userId).ifPresent(u ->
+                        email.sendSellerRejected(u.email(), u.displayName()));
+            }
+
             case "ORDER_PAID" -> {
                 String orderId = payload.get("orderId").asText();
                 findOrderWithBuyer(orderId).ifPresent(pair ->
@@ -88,6 +100,13 @@ class NotificationPublisher {
                 String orderId = payload.get("orderId").asText();
                 findOrderWithBuyer(orderId).ifPresent(pair ->
                         email.sendPaymentRejected(pair.userEmail(), pair.displayName(), orderId));
+            }
+
+            case "SELLER_SALE" -> {
+                String orderId = payload.get("orderId").asText();
+                String sellerId = payload.get("sellerId").asText();
+                findUser(sellerId).ifPresent(u ->
+                        email.sendSellerSale(u.email(), u.displayName(), orderId));
             }
 
             case "SHIPMENT_UPDATED" -> {

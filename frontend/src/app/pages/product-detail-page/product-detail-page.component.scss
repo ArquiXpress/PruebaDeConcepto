@@ -146,6 +146,61 @@
   color: #b42318;
 }
 
+.questions {
+  margin-top: 28px;
+  display: grid;
+  gap: 14px;
+  max-width: 920px;
+}
+
+.questions-head,
+.ask-box,
+.question {
+  padding: 16px;
+  border: 1px solid rgba(18, 48, 74, 0.08);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.questions h2,
+.question p {
+  margin: 4px 0;
+}
+
+.ask-box {
+  display: grid;
+  gap: 10px;
+}
+
+.ask-box.seller-mode {
+  background: rgba(52, 131, 250, 0.06);
+}
+
+.ask-box textarea,
+.answer-box textarea {
+  resize: vertical;
+  border: 1px solid rgba(18, 48, 74, 0.12);
+  border-radius: 8px;
+  padding: 12px;
+  color: #12304a;
+}
+
+.answer-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.answer-box .primary {
+  justify-self: start;
+  padding: 0 18px;
+}
+
+.question-list {
+  display: grid;
+  gap: 10px;
+}
+
 @media (max-width: 980px) {
   .product-layout {
     grid-template-columns: 1fr;

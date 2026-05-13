@@ -37,6 +37,63 @@
 
   <div *ngIf="error()" class="message error">{{ error() }}</div>
   <div *ngIf="success()" class="message success">{{ success() }}</div>
+  <div *ngIf="questionError()" class="message error">{{ questionError() }}</div>
+
+  <section class="panel questions-panel">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow">Consultas</p>
+        <h2>Preguntas de compradores</h2>
+      </div>
+      <button type="button" class="ghost" (click)="loadQuestions()">Actualizar</button>
+    </div>
+
+    <p *ngIf="questionsLoading()" class="muted">Cargando preguntas...</p>
+
+    <div class="empty compact" *ngIf="!questionsLoading() && questions().length === 0">
+      <h3>No hay preguntas por responder</h3>
+      <p class="muted">Cuando un comprador consulte un producto, aparecera en esta seccion.</p>
+    </div>
+
+    <div class="question-grid" *ngIf="pendingQuestions().length">
+      <article class="question-card" *ngFor="let question of pendingQuestions(); trackBy: trackQuestionById">
+        <div>
+          <span class="tag">{{ productTitle(question.productId) }}</span>
+          <h3>{{ question.question }}</h3>
+          <small>{{ question.createdAt | date:'short' }}</small>
+        </div>
+
+        <label>
+          Respuesta
+          <textarea
+            rows="3"
+            maxlength="1200"
+            [(ngModel)]="answerDrafts[question.id]"
+            placeholder="Responde con disponibilidad, detalles o condiciones de compra"
+          ></textarea>
+        </label>
+
+        <button
+          type="button"
+          class="primary small"
+          (click)="answerQuestion(question)"
+          [disabled]="answeringId() === question.id"
+        >
+          {{ answeringId() === question.id ? 'Publicando...' : 'Publicar respuesta' }}
+        </button>
+      </article>
+    </div>
+
+    <details class="answered-block" *ngIf="answeredQuestions().length">
+      <summary>Respondidas ({{ answeredQuestions().length }})</summary>
+      <article class="question-card answered" *ngFor="let question of answeredQuestions(); trackBy: trackQuestionById">
+        <span class="tag">{{ productTitle(question.productId) }}</span>
+        <h3>{{ question.question }}</h3>
+        <p>{{ question.answer }}</p>
+        <small>{{ question.answeredAt | date:'short' }}</small>
+      </article>
+    </details>
+  </section>
 
   <div class="layout">
     <form class="panel form-card" (ngSubmit)="save()">
