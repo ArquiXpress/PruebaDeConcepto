@@ -6,4 +6,4 @@ target/
 .DS_Store
 analysis_*.txt
 
-.fake
+.fake.claude/
