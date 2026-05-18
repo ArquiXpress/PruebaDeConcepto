@@ -82,30 +82,58 @@
                 <div class="box">
                   <div class="flap flap-left"></div>
                   <div class="flap flap-right"></div>
-                  <span class="box-icon">📦</span>
+                  <div class="box-tape"></div>
                 </div>
                 <div class="sparkle s1"></div>
                 <div class="sparkle s2"></div>
                 <div class="sparkle s3"></div>
+                <div class="packing-line pl1"></div>
+                <div class="packing-line pl2"></div>
               </div>
 
               <!-- IN_ROUTE: truck moving -->
               <div class="scene route-scene" *ngIf="order.shipmentStatus === 'IN_ROUTE'">
-                <div class="road"></div>
+                <div class="road">
+                  <div class="road-line"></div>
+                </div>
                 <div class="truck">
-                  <span class="truck-icon">🚚</span>
+                  <div class="truck-body">
+                    <div class="truck-cargo"></div>
+                    <div class="truck-cab"></div>
+                    <div class="truck-window"></div>
+                  </div>
                   <div class="wheel wl"></div>
                   <div class="wheel wr"></div>
                 </div>
                 <div class="dust d1"></div>
                 <div class="dust d2"></div>
+                <div class="dust d3"></div>
               </div>
 
-              <!-- DELIVERED: package at house -->
+              <!-- DELIVERED: animated checkmark with confetti -->
               <div class="scene ok-scene" *ngIf="order.shipmentStatus === 'DELIVERED'">
-                <span class="house-icon">🏠</span>
-                <span class="pkg-icon">📦</span>
-                <span class="check-icon">✅</span>
+                <div class="house-shape">
+                  <div class="house-roof"></div>
+                  <div class="house-body">
+                    <div class="house-door"></div>
+                  </div>
+                </div>
+                <div class="delivered-pkg">
+                  <div class="pkg-box"></div>
+                  <div class="pkg-ribbon"></div>
+                </div>
+                <div class="check-circle">
+                  <svg viewBox="0 0 40 40">
+                    <circle class="check-bg" cx="20" cy="20" r="18" />
+                    <path class="check-mark" d="M12 20l5.5 5.5L28 14" />
+                  </svg>
+                </div>
+                <div class="confetti c1"></div>
+                <div class="confetti c2"></div>
+                <div class="confetti c3"></div>
+                <div class="confetti c4"></div>
+                <div class="confetti c5"></div>
+                <div class="confetti c6"></div>
               </div>
             </div>
 
@@ -146,7 +174,7 @@
               <ng-container *ngIf="nextStatus(order.shipmentStatus) as next; else done">
                 {{ updating() === order.orderId ? 'Actualizando...' : 'Avanzar a ' + visuals[next].title }}
               </ng-container>
-              <ng-template #done>Ciclo completado ✓</ng-template>
+              <ng-template #done>Ciclo completado</ng-template>
             </button>
           </footer>
         </article>
