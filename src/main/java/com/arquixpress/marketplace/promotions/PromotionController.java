@@ -23,6 +23,9 @@ class PromotionController {
     @PostMapping
     PromotionResponse create(@Valid @RequestBody PromotionRequest request, HttpServletRequest http) {
         roles.requireAny(CurrentUser.from(http), Role.ADMIN);
+        if (request.endsAt().isBefore(request.startsAt())) {
+            throw new IllegalArgumentException("La fecha de fin no puede ser anterior a la fecha de inicio");
+        }
         return new PromotionResponse(UUID.randomUUID(), request.name(), request.startsAt(), request.endsAt(), "ACTIVE_MOCK");
     }
 }
