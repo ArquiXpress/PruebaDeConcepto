@@ -5,6 +5,7 @@ import com.arquixpress.marketplace.payments.PaymentGatewayResult;
 import com.arquixpress.marketplace.payments.PaymentStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public class AdvertisingCampaignService {
@@ -24,5 +25,29 @@ public class AdvertisingCampaignService {
             campaign.activate();
         }
         return result.status();
+    }
+
+    public int finalizarCampaniasVencidas(List<AdvertisingCampaign> campaigns, Instant now) {
+        int finished = 0;
+        for (AdvertisingCampaign campaign : campaigns) {
+            if (campaign.finishIfExpired(now)) {
+                finished++;
+            }
+        }
+        return finished;
+    }
+
+    public AdvertisingCampaignMetrics registrarImpresion(AdvertisingCampaign campaign) {
+        campaign.registerImpression();
+        return campaign.metrics();
+    }
+
+    public AdvertisingCampaignMetrics registrarClick(AdvertisingCampaign campaign) {
+        campaign.registerClick();
+        return campaign.metrics();
+    }
+
+    public AdvertisingCampaignMetrics metricas(AdvertisingCampaign campaign) {
+        return campaign.metrics();
     }
 }

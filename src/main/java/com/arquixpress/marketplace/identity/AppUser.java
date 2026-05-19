@@ -2,6 +2,8 @@ package com.arquixpress.marketplace.identity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -26,6 +28,10 @@ public class AppUser {
 
     @Column(nullable = false)
     private String roles;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserStatus status = UserStatus.ACTIVE;
 
     @Column(name = "avatar_url")
     private String avatarUrl;
@@ -67,6 +73,10 @@ public class AppUser {
         return roles;
     }
 
+    public UserStatus status() {
+        return status == null ? UserStatus.ACTIVE : status;
+    }
+
     public String avatarUrl() {
         return avatarUrl;
     }
@@ -105,6 +115,18 @@ public class AppUser {
 
     public void setRoles(String roles) {
         this.roles = roles;
+    }
+
+    public void suspend() {
+        this.status = UserStatus.SUSPENDED;
+    }
+
+    public void block() {
+        this.status = UserStatus.BLOCKED;
+    }
+
+    public void activateAccount() {
+        this.status = UserStatus.ACTIVE;
     }
 
     public void setAvatarUrl(String avatarUrl) {

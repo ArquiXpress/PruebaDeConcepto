@@ -1,5 +1,7 @@
 package com.arquixpress.marketplace.orders;
 
+import com.arquixpress.marketplace.addresses.DeliveryAddress;
+import com.arquixpress.marketplace.addresses.DeliveryAddressRepository;
 import com.arquixpress.marketplace.catalog.Product;
 import com.arquixpress.marketplace.catalog.ProductRepository;
 import com.arquixpress.marketplace.catalog.ProductStatus;
@@ -18,6 +20,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -35,10 +38,19 @@ public class CheckoutService {
     private final NotificationService notifications;
     private final LogisticsCenterRepository centers;
     private final TransactionTemplate tx;
+    private final DeliveryAddressRepository deliveryAddresses;
 
     public CheckoutService(ProductRepository products, OrderRepository orders, PaymentTransactionRepository payments,
             PaymentGatewayClient paymentGateway, NotificationOutboxRepository outbox,
             NotificationService notifications, LogisticsCenterRepository centers, TransactionTemplate tx) {
+        this(products, orders, payments, paymentGateway, outbox, notifications, centers, tx, null);
+    }
+
+    @Autowired
+    public CheckoutService(ProductRepository products, OrderRepository orders, PaymentTransactionRepository payments,
+            PaymentGatewayClient paymentGateway, NotificationOutboxRepository outbox,
+            NotificationService notifications, LogisticsCenterRepository centers, TransactionTemplate tx,
+            DeliveryAddressRepository deliveryAddresses) {
         this.products = products;
         this.orders = orders;
         this.payments = payments;
@@ -47,6 +59,7 @@ public class CheckoutService {
         this.notifications = notifications;
         this.centers = centers;
         this.tx = tx;
+        this.deliveryAddresses = deliveryAddresses;
     }
 
     public CheckoutResponse checkout(UUID buyerId, CheckoutRequest request, String idempotencyKey) {
@@ -96,6 +109,27 @@ public class CheckoutService {
         });
     }
 
+    public OrderResponse cancelOrder(UUID buyerId, UUID orderId) {
+        return tx.execute(status -> {
+            OrderEntity order = findOrder(orderId);
+            if (!order.buyerId().equals(buyerId)) {
+                throw new CheckoutProblem("ORDER_NOT_FOUND", "Pedido no encontrado", HttpStatus.NOT_FOUND);
+            }
+            OrderStatus previousStatus = order.status();
+            order.cancelBeforeDispatch();
+            if (previousStatus == OrderStatus.PAID || previousStatus == OrderStatus.PENDING_PAYMENT) {
+                for (OrderLine line : order.lines()) {
+                    products.releaseStock(line.productId(), line.quantity());
+                }
+            }
+            outbox.save(new NotificationOutbox("ORDER", order.id(), "ORDER_CANCELLED",
+                    "{\"orderId\":\"" + order.id() + "\"}"));
+            notifications.notify(order.buyerId(), "ORDER_CANCELLED", "Pedido cancelado",
+                    "Tu pedido fue cancelado antes del despacho.", "/mis-compras");
+            return OrderResponse.from(order);
+        });
+    }
+
     public List<OrderResponse> listShipmentsByCenter(UUID centerId) {
         List<OrderEntity> list = centerId == null ? orders.findAllPaid() : orders.findPaidByCenter(centerId);
         return list.stream().map(OrderResponse::from).toList();
@@ -107,6 +141,7 @@ public class CheckoutService {
         if (centerId != null) {
             order.assignCenter(centerId, null);
         }
+        assignDeliveryAddress(order, buyerId, request.deliveryAddressId());
         for (CheckoutItemRequest item : request.items()) {
             Product product = products.findByIdAndStatus(item.productId(), ProductStatus.ACTIVE)
                     .orElseThrow(() -> new CheckoutProblem("PRODUCT_NOT_FOUND", "Producto no encontrado", HttpStatus.NOT_FOUND));
@@ -119,6 +154,20 @@ public class CheckoutService {
         orders.save(order);
         savePendingPayment(order.id(), idempotencyKey, order.total(), paymentMethod);
         return new PendingCheckout(order.id(), order.total());
+    }
+
+    private void assignDeliveryAddress(OrderEntity order, UUID buyerId, UUID deliveryAddressId) {
+        if (deliveryAddressId == null) {
+            return;
+        }
+        if (deliveryAddresses == null) {
+            throw new CheckoutProblem("DELIVERY_ADDRESS_NOT_AVAILABLE", "No hay libreta de direcciones configurada",
+                    HttpStatus.CONFLICT);
+        }
+        DeliveryAddress address = deliveryAddresses.findByIdAndUserIdAndActiveTrue(deliveryAddressId, buyerId)
+                .orElseThrow(() -> new CheckoutProblem("DELIVERY_ADDRESS_NOT_FOUND",
+                        "La direccion de entrega no pertenece al comprador o no esta activa", HttpStatus.NOT_FOUND));
+        order.assignDeliveryAddress(address.id(), address.snapshot());
     }
 
     private void prepareRetry(UUID orderId, String idempotencyKey) {

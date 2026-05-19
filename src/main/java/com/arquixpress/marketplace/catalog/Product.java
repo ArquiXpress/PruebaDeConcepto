@@ -122,4 +122,8 @@ public class Product {
     public void deactivate() {
         this.status = ProductStatus.INACTIVE;
     }
+
+    public void suspend() {
+        this.status = ProductStatus.SUSPENDED;
+    }
 }

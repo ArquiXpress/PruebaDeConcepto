@@ -56,4 +56,11 @@ class CheckoutController {
         roles.requireAny(user, Role.CLIENT);
         return checkout.getOrdersForBuyer(user.id());
     }
+
+    @PostMapping("/orders/{orderId}/cancel")
+    OrderResponse cancelOrder(@PathVariable UUID orderId, HttpServletRequest http) {
+        CurrentUser user = CurrentUser.from(http);
+        roles.requireAny(user, Role.CLIENT);
+        return checkout.cancelOrder(user.id(), orderId);
+    }
 }

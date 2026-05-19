@@ -41,6 +41,12 @@ public class OrderEntity {
     @Column(name = "logistics_operator_id")
     private UUID logisticsOperatorId;
 
+    @Column(name = "delivery_address_id")
+    private UUID deliveryAddressId;
+
+    @Column(name = "delivery_address_snapshot", length = 500)
+    private String deliveryAddressSnapshot;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -88,6 +94,17 @@ public class OrderEntity {
         updatedAt = Instant.now();
     }
 
+    public void cancelBeforeDispatch() {
+        if (shipmentStatus != ShipmentStatus.PREPARATION) {
+            throw new IllegalArgumentException("Solo se puede cancelar antes del despacho");
+        }
+        if (status == OrderStatus.CANCELLED) {
+            throw new IllegalArgumentException("El pedido ya esta cancelado");
+        }
+        status = OrderStatus.CANCELLED;
+        updatedAt = Instant.now();
+    }
+
     public void updateShipment(ShipmentStatus next) {
         if (next.ordinal() < shipmentStatus.ordinal()) {
             throw new IllegalArgumentException("No se permite retroceder el estado de envio");
@@ -105,6 +122,12 @@ public class OrderEntity {
         this.updatedAt = Instant.now();
     }
 
+    public void assignDeliveryAddress(UUID addressId, String snapshot) {
+        this.deliveryAddressId = addressId;
+        this.deliveryAddressSnapshot = snapshot;
+        this.updatedAt = Instant.now();
+    }
+
     public UUID id() { return id; }
     public UUID buyerId() { return buyerId; }
     public OrderStatus status() { return status; }
@@ -112,6 +135,8 @@ public class OrderEntity {
     public BigDecimal total() { return total; }
     public UUID logisticsCenterId() { return logisticsCenterId; }
     public UUID logisticsOperatorId() { return logisticsOperatorId; }
+    public UUID deliveryAddressId() { return deliveryAddressId; }
+    public String deliveryAddressSnapshot() { return deliveryAddressSnapshot; }
     public Instant createdAt() { return createdAt; }
     public Instant updatedAt() { return updatedAt; }
     public List<OrderLine> lines() { return List.copyOf(lines); }

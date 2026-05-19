@@ -63,5 +63,7 @@ public class PaymentTransaction {
     public String idempotencyKey() { return idempotencyKey; }
     public String paymentMethod() { return paymentMethod == null || paymentMethod.isBlank() ? "Pago simulado" : paymentMethod; }
     public String transactionId() { return id.toString(); }
+    public String externalReference() { return externalReference; }
+    public String gatewayReference() { return externalReference == null || externalReference.isBlank() ? transactionId() : externalReference; }
     public PaymentStatus status() { return status; }
 }

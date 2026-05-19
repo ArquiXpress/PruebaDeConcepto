@@ -24,14 +24,17 @@ public class AdminController {
     private final RollbackService rollbackService;
     private final AdminStatsService statsService;
     private final AdminUserService userService;
+    private final AdminProductModerationService productModerationService;
     private final SellerApplicationService sellerApplicationService;
 
     public AdminController(RoleGuard roles, RollbackService rollbackService, AdminStatsService statsService,
-            AdminUserService userService, SellerApplicationService sellerApplicationService) {
+            AdminUserService userService, AdminProductModerationService productModerationService,
+            SellerApplicationService sellerApplicationService) {
         this.roles = roles;
         this.rollbackService = rollbackService;
         this.statsService = statsService;
         this.userService = userService;
+        this.productModerationService = productModerationService;
         this.sellerApplicationService = sellerApplicationService;
     }
 
@@ -59,6 +62,45 @@ public class AdminController {
         CurrentUser currentUser = CurrentUser.from(http);
         roles.requireAny(currentUser, Role.ADMIN, Role.SUPERADMIN);
         return userService.updateUserRoles(userId, request.roles(), currentUser);
+    }
+
+    @PostMapping("/users/{userId}/suspend")
+    public AdminUserResponse suspendUser(@PathVariable UUID userId, HttpServletRequest http) {
+        roles.requireAny(CurrentUser.from(http), Role.ADMIN, Role.SUPERADMIN);
+        return userService.suspendUser(userId);
+    }
+
+    @PostMapping("/users/{userId}/block")
+    public AdminUserResponse blockUser(@PathVariable UUID userId, HttpServletRequest http) {
+        roles.requireAny(CurrentUser.from(http), Role.ADMIN, Role.SUPERADMIN);
+        return userService.blockUser(userId);
+    }
+
+    @PostMapping("/users/{userId}/activate")
+    public AdminUserResponse reactivateUser(@PathVariable UUID userId, HttpServletRequest http) {
+        roles.requireAny(CurrentUser.from(http), Role.ADMIN, Role.SUPERADMIN);
+        return userService.reactivateUser(userId);
+    }
+
+    @PostMapping("/products/{productId}/approve")
+    public com.arquixpress.marketplace.catalog.api.SellerProductResponse approveProduct(
+            @PathVariable UUID productId, HttpServletRequest http) {
+        roles.requireAny(CurrentUser.from(http), Role.ADMIN, Role.SUPERADMIN);
+        return productModerationService.approve(productId);
+    }
+
+    @PostMapping("/products/{productId}/reject")
+    public com.arquixpress.marketplace.catalog.api.SellerProductResponse rejectProduct(
+            @PathVariable UUID productId, HttpServletRequest http) {
+        roles.requireAny(CurrentUser.from(http), Role.ADMIN, Role.SUPERADMIN);
+        return productModerationService.reject(productId);
+    }
+
+    @PostMapping("/products/{productId}/suspend")
+    public com.arquixpress.marketplace.catalog.api.SellerProductResponse suspendProduct(
+            @PathVariable UUID productId, HttpServletRequest http) {
+        roles.requireAny(CurrentUser.from(http), Role.ADMIN, Role.SUPERADMIN);
+        return productModerationService.suspend(productId);
     }
 
     @GetMapping("/seller-applications")

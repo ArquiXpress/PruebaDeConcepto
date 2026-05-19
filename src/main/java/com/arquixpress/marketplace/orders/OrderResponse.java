@@ -11,6 +11,8 @@ public record OrderResponse(
         BigDecimal total,
         UUID logisticsCenterId,
         UUID logisticsOperatorId,
+        UUID deliveryAddressId,
+        String deliveryAddressSnapshot,
         UUID buyerId,
         List<OrderLineResponse> lines) {
 
@@ -22,6 +24,8 @@ public record OrderResponse(
                 order.total(),
                 order.logisticsCenterId(),
                 order.logisticsOperatorId(),
+                order.deliveryAddressId(),
+                order.deliveryAddressSnapshot(),
                 order.buyerId(),
                 order.lines().stream().map(OrderLineResponse::from).toList());
     }

@@ -4,6 +4,7 @@ import com.arquixpress.marketplace.identity.AppUser;
 import com.arquixpress.marketplace.identity.AppUserRepository;
 import com.arquixpress.marketplace.identity.CurrentUser;
 import com.arquixpress.marketplace.identity.Role;
+import com.arquixpress.marketplace.identity.UserStatus;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -26,7 +27,8 @@ public class AdminUserService {
                 user.id(),
                 user.email(),
                 user.displayName(),
-                user.roles()
+                user.roles(),
+                user.status()
             ))
             .collect(Collectors.toList());
     }
@@ -55,7 +57,8 @@ public class AdminUserService {
             user.id(),
             user.email(),
             user.displayName(),
-            user.roles()
+            user.roles(),
+            user.status()
         );
     }
 
@@ -105,7 +108,40 @@ public class AdminUserService {
             user.id(),
             user.email(),
             user.displayName(),
-            user.roles()
+            user.roles(),
+            user.status()
         );
+    }
+
+    @Transactional
+    public AdminUserResponse suspendUser(UUID userId) {
+        return changeUserStatus(userId, UserStatus.SUSPENDED);
+    }
+
+    @Transactional
+    public AdminUserResponse blockUser(UUID userId) {
+        return changeUserStatus(userId, UserStatus.BLOCKED);
+    }
+
+    @Transactional
+    public AdminUserResponse reactivateUser(UUID userId) {
+        return changeUserStatus(userId, UserStatus.ACTIVE);
+    }
+
+    private AdminUserResponse changeUserStatus(UUID userId, UserStatus status) {
+        AppUser user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        if (user.roleSet().contains(Role.SUPERADMIN)) {
+            throw new IllegalArgumentException("La cuenta superadmin no se puede suspender ni bloquear");
+        }
+        if (status == UserStatus.SUSPENDED) {
+            user.suspend();
+        } else if (status == UserStatus.BLOCKED) {
+            user.block();
+        } else {
+            user.activateAccount();
+        }
+        userRepository.save(user);
+        return new AdminUserResponse(user.id(), user.email(), user.displayName(), user.roles(), user.status());
     }
 }
