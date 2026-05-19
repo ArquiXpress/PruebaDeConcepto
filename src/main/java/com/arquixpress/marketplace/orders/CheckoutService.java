@@ -117,8 +117,11 @@ public class CheckoutService {
         }
         List<Product> orderProducts = new java.util.ArrayList<>();
         for (CheckoutItemRequest item : request.items()) {
-            Product product = products.findByIdAndStatus(item.productId(), ProductStatus.ACTIVE)
+            Product product = products.findById(item.productId())
                     .orElseThrow(() -> new CheckoutProblem("PRODUCT_NOT_FOUND", "Producto no encontrado", HttpStatus.NOT_FOUND));
+            if (product.status() != ProductStatus.ACTIVE || product.stockAvailable() < item.quantity()) {
+                throw new CheckoutProblem("INSUFFICIENT_STOCK", "Stock insuficiente para el producto " + item.productId(), HttpStatus.CONFLICT);
+            }
             orderProducts.add(product);
             int reserved = products.reserveStock(item.productId(), item.quantity());
             if (reserved != 1) {

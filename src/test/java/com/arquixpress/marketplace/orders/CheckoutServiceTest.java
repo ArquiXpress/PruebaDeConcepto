@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 
 import com.arquixpress.marketplace.catalog.Product;
 import com.arquixpress.marketplace.catalog.ProductRepository;
-import com.arquixpress.marketplace.catalog.ProductStatus;
 import com.arquixpress.marketplace.identity.AppUserRepository;
 import com.arquixpress.marketplace.logistics.LogisticsCenterRepository;
 import com.arquixpress.marketplace.notifications.NotificationOutboxRepository;
@@ -85,7 +84,7 @@ class CheckoutServiceTest {
 
         when(payments.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.empty());
         when(centers.findAll()).thenReturn(List.of());
-        when(products.findByIdAndStatus(any(UUID.class), eq(ProductStatus.ACTIVE))).thenReturn(Optional.of(product));
+        when(products.findById(any(UUID.class))).thenReturn(Optional.of(product));
         when(products.reserveStock(any(UUID.class), eq(2))).thenReturn(1);
         when(orders.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
         when(payments.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -122,7 +121,7 @@ class CheckoutServiceTest {
 
         when(payments.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.empty());
         when(centers.findAll()).thenReturn(List.of());
-        when(products.findByIdAndStatus(any(UUID.class), eq(ProductStatus.ACTIVE))).thenReturn(Optional.of(product));
+        when(products.findById(any(UUID.class))).thenReturn(Optional.of(product));
         when(products.reserveStock(any(UUID.class), eq(1))).thenReturn(1);
         when(orders.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
         when(payments.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -191,7 +190,7 @@ class CheckoutServiceTest {
 
         when(payments.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.empty());
         when(centers.findAll()).thenReturn(List.of());
-        when(products.findByIdAndStatus(productId, ProductStatus.ACTIVE)).thenReturn(Optional.empty());
+        when(products.findById(productId)).thenReturn(Optional.empty());
 
         CheckoutRequest request = request(productId, 1);
 
@@ -209,7 +208,7 @@ class CheckoutServiceTest {
 
         when(payments.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.empty());
         when(centers.findAll()).thenReturn(List.of());
-        when(products.findByIdAndStatus(any(UUID.class), eq(ProductStatus.ACTIVE))).thenReturn(Optional.of(product));
+        when(products.findById(any(UUID.class))).thenReturn(Optional.of(product));
         when(products.reserveStock(any(UUID.class), eq(99))).thenReturn(0);
 
         CheckoutRequest request = request(productId, 99);

@@ -18,7 +18,7 @@ export const options = {
 };
 
 export default function () {
-  const res = http.get(`${BASE_URL}/api/products/search?query=pro&page=0&size=20`);
+  const res = http.get(`${BASE_URL}/api/products?query=pro&page=0&size=20`);
   check(res, {
     'search status 200': r => r.status === 200,
     'search has content': r => Boolean(r.body && r.body.includes('content')),

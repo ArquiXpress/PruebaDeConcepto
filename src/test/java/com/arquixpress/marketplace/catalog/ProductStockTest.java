@@ -84,7 +84,7 @@ class ProductStockTest {
 
         when(payments.findByIdempotencyKey(key)).thenReturn(Optional.empty());
         when(centers.findAll()).thenReturn(List.of());
-        when(products.findByIdAndStatus(any(UUID.class), eq(ProductStatus.ACTIVE))).thenReturn(Optional.of(product));
+        when(products.findById(any(UUID.class))).thenReturn(Optional.of(product));
         when(products.reserveStock(any(UUID.class), eq(5))).thenReturn(1);
         when(orders.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(payments.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -116,7 +116,7 @@ class ProductStockTest {
 
         when(payments.findByIdempotencyKey(key)).thenReturn(Optional.empty());
         when(centers.findAll()).thenReturn(List.of());
-        when(products.findByIdAndStatus(any(UUID.class), eq(ProductStatus.ACTIVE))).thenReturn(Optional.of(product));
+        when(products.findById(any(UUID.class))).thenReturn(Optional.of(product));
         when(products.reserveStock(any(UUID.class), eq(100))).thenReturn(0);
 
         CheckoutRequest request = request(productId, 100);
@@ -135,7 +135,7 @@ class ProductStockTest {
 
         when(payments.findByIdempotencyKey(key)).thenReturn(Optional.empty());
         when(centers.findAll()).thenReturn(List.of());
-        when(products.findByIdAndStatus(any(UUID.class), eq(ProductStatus.ACTIVE))).thenReturn(Optional.of(product));
+        when(products.findById(any(UUID.class))).thenReturn(Optional.of(product));
         when(products.reserveStock(any(UUID.class), eq(3))).thenReturn(1);
         when(orders.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(payments.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
