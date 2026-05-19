@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
@@ -27,6 +27,7 @@ export class AppComponent {
   guestPromptOpen = signal(false);
   menuOpen = signal(false);
   unreadNotifications = signal(0);
+  loadingProductIds = new Set<string>();
 
   constructor(
     public readonly session: SessionService,
@@ -41,12 +42,15 @@ export class AppComponent {
     this.session.refreshFromBackend();
     this.loadProductsForCart();
     this.loadUnreadNotifications();
+    effect(() => {
+      this.cart.items().forEach((item) => this.ensureProductLoaded(item.productId));
+    });
   }
 
   loadProductsForCart(): void {
     this.catalog.search('', '', 0, 1000).subscribe({
       next: (page) => {
-        const cache = new Map<string, Product>();
+        const cache = new Map(this.productCache());
         page.content.forEach((product) => cache.set(product.id, product));
         this.productCache.set(cache);
       },
@@ -55,6 +59,22 @@ export class AppComponent {
 
   productById(id: string): Product | undefined {
     return this.productCache().get(id);
+  }
+
+  ensureProductLoaded(id: string): void {
+    if (this.productCache().has(id) || this.loadingProductIds.has(id)) {
+      return;
+    }
+    this.loadingProductIds.add(id);
+    this.catalog.detail(id).subscribe({
+      next: (product) => {
+        const cache = new Map(this.productCache());
+        cache.set(product.id, product);
+        this.productCache.set(cache);
+        this.loadingProductIds.delete(id);
+      },
+      error: () => this.loadingProductIds.delete(id),
+    });
   }
 
   subtotal(): number {
