@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -31,6 +32,7 @@ import com.arquixpress.marketplace.payments.PaymentTransaction;
 import com.arquixpress.marketplace.payments.PaymentTransactionRepository;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.TransactionStatus;
 
 class CheckoutServiceTest {
 
@@ -61,8 +63,8 @@ class CheckoutServiceTest {
             return callback.doInTransaction(null);
         });
         doAnswer(inv -> {
-            TransactionCallback<?> callback = inv.getArgument(0);
-            callback.doInTransaction(null);
+            Consumer<TransactionStatus> callback = inv.getArgument(0);
+            callback.accept(null);
             return null;
         }).when(tx).executeWithoutResult(any());
 
@@ -219,5 +221,149 @@ class CheckoutServiceTest {
 
         CheckoutProblem ex = assertThrows(CheckoutProblem.class, () -> checkoutService.checkout(buyerId, request, idempotencyKey));
         assertEquals("INSUFFICIENT_STOCK", ex.code());
+    }
+
+    @Test
+    void retryPayment_deberiaRetornarResultadoIdempotenteSiKeyYaExiste() {
+        UUID orderId = UUID.randomUUID();
+        UUID buyerId = UUID.randomUUID();
+        String key = "retry-key-idem";
+
+        PaymentTransaction existingPayment = new PaymentTransaction(
+                UUID.randomUUID(), orderId, key, BigDecimal.valueOf(50000), "Pago simulado");
+        OrderEntity existingOrder = new OrderEntity(orderId, buyerId);
+        existingOrder.addLine(UUID.randomUUID(), 1, BigDecimal.valueOf(50000));
+        existingOrder.markPaid();
+
+        when(payments.findByIdempotencyKey(key)).thenReturn(Optional.of(existingPayment));
+        when(orders.findWithLines(orderId)).thenReturn(Optional.of(existingOrder));
+        when(products.findAllById(any())).thenReturn(List.of());
+
+        CheckoutResponse result = checkoutService.retryPayment(orderId, key);
+
+        assertEquals("Resultado idempotente de reintento", result.message());
+        verify(paymentGateway, never()).charge(any(), any(), any());
+    }
+
+    @Test
+    void retryPayment_deberiaLanzarExcepcionSiPedidoYaFuePagado() {
+        UUID orderId = UUID.randomUUID();
+        UUID buyerId = UUID.randomUUID();
+        String key = "retry-key-paid";
+
+        OrderEntity orderPagado = new OrderEntity(orderId, buyerId);
+        orderPagado.addLine(UUID.randomUUID(), 1, BigDecimal.valueOf(30000));
+        orderPagado.markPaid();
+
+        when(payments.findByIdempotencyKey(key)).thenReturn(Optional.empty());
+        when(orders.findWithLines(orderId)).thenReturn(Optional.of(orderPagado));
+
+        CheckoutProblem ex = assertThrows(CheckoutProblem.class,
+                () -> checkoutService.retryPayment(orderId, key));
+
+        assertEquals("ORDER_NOT_RETRYABLE", ex.code());
+    }
+
+    @Test
+    void retryPayment_deberiaReintentarCobroExitosoSiPagoFueRechazado() {
+        UUID orderId = UUID.randomUUID();
+        UUID buyerId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        String key = "retry-key-ok";
+
+        PaymentTransaction pagoAnterior = new PaymentTransaction(
+                UUID.randomUUID(), orderId, "key-anterior",
+                BigDecimal.valueOf(50000), "Pago simulado");
+
+        when(payments.findByIdempotencyKey(key))
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(
+                new PaymentTransaction(
+                        UUID.randomUUID(),
+                        orderId,
+                        key,
+                        BigDecimal.valueOf(50000),
+                        "Pago retry"
+                )
+        ));
+        when(orders.findWithLines(orderId)).thenAnswer(inv -> {
+            OrderEntity o = new OrderEntity(orderId, buyerId);
+            o.addLine(productId, 2, BigDecimal.valueOf(25000));
+            o.markRejected();
+            return Optional.of(o);
+        });
+        when(products.reserveStock(productId, 2)).thenReturn(1);
+        when(payments.findFirstByOrderIdOrderByCreatedAtDesc(orderId))
+                .thenReturn(Optional.of(pagoAnterior));
+        when(payments.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(paymentGateway.charge(eq(orderId), any(), eq(key)))
+                .thenReturn(PaymentGatewayResult.approved("REF-RETRY-OK"));
+        when(products.findAllById(any())).thenReturn(List.of());
+
+        CheckoutResponse result = checkoutService.retryPayment(orderId, key);
+
+        assertEquals(OrderStatus.PAID, result.orderStatus());
+        verify(paymentGateway).charge(eq(orderId), any(), eq(key));
+    }
+    
+    @Test
+    void getOrder_deberiaRetornarDetalleDePedidoExistente() {
+        UUID orderId = UUID.randomUUID();
+        UUID buyerId = UUID.randomUUID();
+
+        OrderEntity order = new OrderEntity(orderId, buyerId);
+        order.addLine(UUID.randomUUID(), 1, BigDecimal.valueOf(80000));
+        order.markPaid();
+
+        when(orders.findWithLines(orderId)).thenReturn(Optional.of(order));
+        when(products.findAllById(any())).thenReturn(List.of());
+
+        OrderResponse result = checkoutService.getOrder(orderId);
+
+        assertEquals(orderId, result.orderId());
+        assertEquals(OrderStatus.PAID, result.status());
+    }
+
+    @Test
+    void getOrder_deberiaLanzarExcepcionSiPedidoNoExiste() {
+        UUID orderId = UUID.randomUUID();
+
+        when(orders.findWithLines(orderId)).thenReturn(Optional.empty());
+
+        CheckoutProblem ex = assertThrows(CheckoutProblem.class,
+                () -> checkoutService.getOrder(orderId));
+
+        assertEquals("ORDER_NOT_FOUND", ex.code());
+    }
+
+    @Test
+    void getOrdersForBuyer_deberiaRetornarTodosLosPedidosDelComprador() {
+        UUID buyerId = UUID.randomUUID();
+
+        OrderEntity order1 = new OrderEntity(UUID.randomUUID(), buyerId);
+        order1.addLine(UUID.randomUUID(), 1, BigDecimal.valueOf(10000));
+        order1.markPaid();
+
+        OrderEntity order2 = new OrderEntity(UUID.randomUUID(), buyerId);
+        order2.addLine(UUID.randomUUID(), 2, BigDecimal.valueOf(20000));
+
+        when(orders.findByBuyerWithLines(buyerId)).thenReturn(List.of(order1, order2));
+        when(products.findAllById(any())).thenReturn(List.of());
+
+        List<OrderResponse> result = checkoutService.getOrdersForBuyer(buyerId);
+
+        assertEquals(2, result.size());
+        verify(orders).findByBuyerWithLines(buyerId);
+    }
+
+    @Test
+    void getOrdersForBuyer_deberiaRetornarListaVaciaSiNoHayPedidos() {
+        UUID buyerId = UUID.randomUUID();
+
+        when(orders.findByBuyerWithLines(buyerId)).thenReturn(List.of());
+
+        List<OrderResponse> result = checkoutService.getOrdersForBuyer(buyerId);
+
+        assertEquals(0, result.size());
     }
 }

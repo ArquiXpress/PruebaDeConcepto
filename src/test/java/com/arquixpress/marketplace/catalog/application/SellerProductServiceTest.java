@@ -11,6 +11,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -85,5 +86,44 @@ class SellerProductServiceTest {
 
         resp = service.updateStock(sellerId, productId, -5);
         assertThat(resp.stockAvailable()).isEqualTo(0);
+    }
+    
+    @Test
+    void updateStock_deberiaLanzarExcepcionSiProductoNoPerteneceAlVendedor() {
+        UUID sellerId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        when(products.findByIdAndSellerId(productId, sellerId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.updateStock(sellerId, productId, 50))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("no encontrado");
+    }
+
+    @Test
+    void listMine_deberiaRetornarSoloProductosDelVendedor() {
+        UUID sellerId = UUID.randomUUID();
+        Product p1 = new Product(sellerId, "Prod A", "Desc", "cat",
+                "http://img/1.png", new BigDecimal("10.00"), 5);
+        Product p2 = new Product(sellerId, "Prod B", "Desc", "cat",
+                "http://img/2.png", new BigDecimal("20.00"), 3);
+
+        when(products.findBySellerIdOrderByCreatedAtDesc(sellerId)).thenReturn(List.of(p1, p2));
+
+        var resultado = service.listMine(sellerId);
+
+        assertThat(resultado).hasSize(2);
+        assertThat(resultado).allMatch(r -> r.sellerId().equals(sellerId));
+    }
+
+    @Test
+    void detailMine_deberiaLanzarExcepcionSiProductoNoPerteneceAlVendedor() {
+        UUID sellerId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        when(products.findByIdAndSellerId(productId, sellerId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.detailMine(sellerId, productId))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
