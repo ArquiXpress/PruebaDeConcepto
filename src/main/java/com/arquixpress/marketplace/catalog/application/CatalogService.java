@@ -96,7 +96,7 @@ public class CatalogService {
                         .addValue("imageUrls", toJson(images))
                         .addValue("price", request.price())
                         .addValue("stockAvailable", request.stockAvailable())
-                        .addValue("status", ProductStatus.ACTIVE.name())
+                        .addValue("status", request.stockAvailable() == 0 ? ProductStatus.INACTIVE.name() : ProductStatus.ACTIVE.name())
                         .addValue("createdAt", Timestamp.from(Instant.now())));
         return detail(id);
     }
@@ -123,8 +123,9 @@ public class CatalogService {
     private Page<ProductSummary> searchReplica(String normalizedQuery, String normalizedCategory, Pageable pageable) {
         StringBuilder sql = new StringBuilder("""
                 select id, seller_id, title, description, category, image_url, image_urls, price, stock_available
-                  from product
+                 from product
                  where status = 'ACTIVE'
+                   and stock_available > 0
                 """);
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("limit", pageable.getPageSize())
@@ -157,6 +158,7 @@ public class CatalogService {
                   from product
                  where id = :id
                    and status = 'ACTIVE'
+                   and stock_available > 0
                 """, new MapSqlParameterSource("id", id), (rs, rowNum) -> new ProductSummary(
                 UUID.fromString(rs.getString("id")),
                 UUID.fromString(rs.getString("seller_id")),

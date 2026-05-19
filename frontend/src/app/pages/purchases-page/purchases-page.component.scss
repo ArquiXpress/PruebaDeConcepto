@@ -3,6 +3,16 @@
 .panel-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
 .orders { display: grid; gap: 12px; }
 .orders article { display: grid; gap: 6px; padding: 14px; border-radius: 8px; background: rgba(15,76,129,.05); }
+.mini-products { display: flex; flex-wrap: wrap; gap: 6px; color: #58708a; }
+button { width: fit-content; border: 0; border-radius: 10px; padding: 10px 14px; background: linear-gradient(135deg,#0f4c81,#2563eb); color: #fff; font-weight: 800; cursor: pointer; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(18,48,74,.32); z-index: 30; }
+.order-detail { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; z-index: 31; padding: 24px; border-radius: 16px; background: #fff; box-shadow: 0 24px 70px rgba(18,48,74,.24); display: grid; gap: 12px; }
+.close { justify-self: end; background: #eef4fb; color: #0f4c81; }
+.detail-products { display: grid; gap: 10px; }
+.detail-products article { display: grid; grid-template-columns: 72px 1fr; gap: 12px; padding: 10px; border: 1px solid rgba(18,48,74,.08); border-radius: 10px; }
+.detail-products img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; }
+.detail-products div { display: grid; gap: 3px; }
+.detail-products small { color: #58708a; }
 .muted { color: #58708a; }
 .error { color: #b42318; }
 a { color: #0f4c81; text-decoration: none; font-weight: 800; }

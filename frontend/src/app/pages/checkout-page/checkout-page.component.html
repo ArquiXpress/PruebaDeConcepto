@@ -14,6 +14,14 @@
         </p>
         <p class="muted">Productos en carrito: {{ itemCount() }}</p>
 
+        <section class="payment-block">
+          <label>Direccion de envio</label>
+          <input [(ngModel)]="shippingAddress" placeholder="Direccion, apartamento, referencias" maxlength="240" />
+          <label>Ciudad de envio</label>
+          <input [(ngModel)]="shippingCity" placeholder="Ciudad" maxlength="120" />
+          <p class="helper">Usamos tu direccion de perfil como predeterminada. El costo final se calcula segun la ciudad del vendedor y la ciudad de entrega.</p>
+        </section>
+
         <div class="payment-block">
           <label for="paymentMethod">Metodo de pago</label>
           <select id="paymentMethod" [(ngModel)]="selectedPaymentMethod" (ngModelChange)="onPaymentMethodChange()">
@@ -196,6 +204,11 @@
         </ng-template>
 
         <div class="summary-total">
+          <span>Envio estimado</span>
+          <strong>{{ estimatedShipping() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+
+        <div class="summary-total">
           <span>Total estimado</span>
           <strong>{{ subtotal() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
         </div>
@@ -229,6 +242,14 @@
         <div class="result-card">
           <span>Total pagado</span>
           <strong>{{ checkoutResult.total | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+        <div class="result-card">
+          <span>Envio</span>
+          <strong>{{ checkoutResult.shippingCost | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+        <div class="result-card">
+          <span>Destino</span>
+          <strong>{{ checkoutResult.shippingAddress }} · {{ checkoutResult.shippingCity }}</strong>
         </div>
       </div>
 

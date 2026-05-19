@@ -8,11 +8,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 @Service
 public class AuthService {
+    private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
+
     private final AppUserRepository users;
     private final PasswordResetEmailService resetEmailService;
     private final NotificationOutboxRepository outbox;
@@ -27,8 +30,12 @@ public class AuthService {
     public AuthUser login(LoginRequest request) {
         AppUser account = users.findByEmail(normalize(request.email()))
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales invalidas"));
-        if (!account.password().equals(request.password())) {
+        if (!passwordMatches(request.password(), account.password())) {
             throw new IllegalArgumentException("Credenciales invalidas");
+        }
+        if (!isPasswordHash(account.password())) {
+            account.setPassword(hashPassword(request.password()));
+            users.save(account);
         }
         return account.toAuthUser();
     }
@@ -44,7 +51,7 @@ public class AuthService {
         AppUser created = AppUser.create(
                 UUID.randomUUID(),
                 email,
-                request.password(),
+                hashPassword(request.password()),
                 request.displayName().trim(),
                 Set.of(Role.CLIENT));
         applyProfile(created, request.displayName(), request.avatarUrl(), request.phone(), request.address(),
@@ -72,7 +79,7 @@ public class AuthService {
         AppUser created = AppUser.create(
                 UUID.randomUUID(),
                 email,
-                request.password(),
+                hashPassword(request.password()),
                 request.displayName().trim(),
                 roles);
         applyProfile(created, request.displayName(), request.avatarUrl(), request.phone(), request.address(),
@@ -118,7 +125,7 @@ public class AuthService {
         if (user.resetTokenExpiresAt() == null || user.resetTokenExpiresAt().isBefore(Instant.now())) {
             throw new IllegalArgumentException("Token expirado");
         }
-        user.setPassword(request.newPassword());
+        user.setPassword(hashPassword(request.newPassword()));
         user.setResetToken(null);
         user.setResetTokenExpiresAt(null);
         return users.save(user).toAuthUser();
@@ -140,7 +147,7 @@ public class AuthService {
         }
         AppUser user = users.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-        user.setPassword(newPassword);
+        user.setPassword(hashPassword(newPassword));
         AppUser updated = users.save(user);
 
         outbox.save(new NotificationOutbox(
@@ -168,6 +175,24 @@ public class AuthService {
 
     private String clean(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private String hashPassword(String password) {
+        return PASSWORD_ENCODER.encode(password);
+    }
+
+    private boolean passwordMatches(String rawPassword, String storedPassword) {
+        if (!StringUtils.hasText(storedPassword)) {
+            return false;
+        }
+        if (isPasswordHash(storedPassword)) {
+            return PASSWORD_ENCODER.matches(rawPassword, storedPassword);
+        }
+        return storedPassword.equals(rawPassword);
+    }
+
+    private boolean isPasswordHash(String password) {
+        return password.startsWith("$2a$") || password.startsWith("$2b$") || password.startsWith("$2y$");
     }
 
     private Set<Role> parseOperatorRoles(String roles) {

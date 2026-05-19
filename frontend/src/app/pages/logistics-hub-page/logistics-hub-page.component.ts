@@ -26,6 +26,7 @@ export class LogisticsHubPageComponent implements OnInit {
   context = signal<LogisticsOperatorContext | null>(null);
   centerList = signal<LogisticsCenter[]>([]);
   orders = signal<LogisticsOrder[]>([]);
+  selectedOrder = signal<LogisticsOrder | null>(null);
   loading = signal(false);
   updating = signal<string | null>(null);
   error = signal('');
@@ -101,19 +102,33 @@ export class LogisticsHubPageComponent implements OnInit {
     return null;
   }
 
+  previousStatus(current: ShipmentStatus): ShipmentStatus | null {
+    if (current === 'DELIVERED') return 'IN_ROUTE';
+    if (current === 'IN_ROUTE') return 'PREPARATION';
+    return null;
+  }
+
   advance(order: LogisticsOrder): void {
     const next = this.nextStatus(order.shipmentStatus);
     if (!next) return;
+    this.changeShipment(order, next, `Pedido #${order.orderId} actualizado a "${this.visuals[next].title}".`);
+  }
+
+  revert(order: LogisticsOrder): void {
+    const previous = this.previousStatus(order.shipmentStatus);
+    if (!previous) return;
+    this.changeShipment(order, previous, `Pedido #${order.orderId} devuelto a "${this.visuals[previous].title}".`);
+  }
+
+  private changeShipment(order: LogisticsOrder, status: ShipmentStatus, message: string): void {
     this.updating.set(order.orderId);
-    this.logistics.updateShipment(order.orderId, next).subscribe({
+    this.logistics.updateShipment(order.orderId, status).subscribe({
       next: (updated) => {
         this.orders.update((list) =>
           list.map((o) => (o.orderId === updated.orderId ? { ...o, ...updated } : o))
         );
         this.updating.set(null);
-        this.notice.set(
-          `Pedido #${this.shortId(order.orderId)} actualizado a "${this.visuals[next].title}".`
-        );
+        this.notice.set(message);
       },
       error: () => {
         this.updating.set(null);
@@ -142,5 +157,13 @@ export class LogisticsHubPageComponent implements OnInit {
       currency: 'COP',
       maximumFractionDigits: 0,
     }).format(value);
+  }
+
+  openOrder(order: LogisticsOrder): void {
+    this.selectedOrder.set(order);
+  }
+
+  closeOrder(): void {
+    this.selectedOrder.set(null);
   }
 }

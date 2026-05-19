@@ -135,9 +135,16 @@
       </div>
 
       <label>
-        URL de imagen
-        <input name="imageUrl" [(ngModel)]="form.imageUrl" placeholder="https://..." required />
+        Fotos del producto
+        <input type="file" accept="image/png,image/jpeg" multiple (change)="onProductImagesSelected($event)" />
       </label>
+
+      <div class="image-preview-grid" *ngIf="form.imageUrls?.length">
+        <div class="image-preview" *ngFor="let image of form.imageUrls; let imageIndex = index">
+          <img [src]="image" [alt]="'Foto ' + (imageIndex + 1)" />
+          <button type="button" class="ghost" (click)="removeFormImage(imageIndex)">Quitar</button>
+        </div>
+      </div>
 
       <div class="field-grid">
         <label>
@@ -173,20 +180,30 @@
       </div>
 
       <article class="product-row" *ngFor="let product of products(); trackBy: trackById">
-        <img [src]="product.imageUrl" [alt]="product.title" />
+        <a class="product-thumb-link" [routerLink]="['/vendedor/publicaciones', product.id]">
+          <img [src]="product.imageUrl" [alt]="product.title" />
+        </a>
 
         <div class="product-info">
           <div class="row-head">
             <div>
               <span class="tag">{{ product.category }}</span>
-              <h3>{{ product.title }}</h3>
+              <h3>
+                <a [routerLink]="['/vendedor/publicaciones', product.id]">{{ product.title }}</a>
+              </h3>
             </div>
             <span class="status" [class.inactive]="product.status === 'INACTIVE'">
-              {{ product.status === 'INACTIVE' ? 'Retirado' : 'Publicado' }}
+              {{ product.status === 'INACTIVE' ? 'Oculto' : 'Publicado' }}
             </span>
           </div>
 
           <p>{{ product.description }}</p>
+          <p class="stock-hidden" *ngIf="product.stockAvailable === 0">
+            Publicacion oculta ya que no hay stock disponible.
+          </p>
+          <p class="stock-hidden" *ngIf="product.moderationReason">
+            Publicacion eliminada por administracion: {{ product.moderationReason }}
+          </p>
 
           <div class="product-meta">
             <strong>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
@@ -195,6 +212,7 @@
           </div>
 
           <div class="row-actions">
+            <a class="ghost action-link" [routerLink]="['/vendedor/publicaciones', product.id]">Ver detalle</a>
             <button type="button" class="ghost" (click)="edit(product)">Editar</button>
             <button type="button" class="ghost" (click)="toggleStatus(product)">
               {{ product.status === 'INACTIVE' ? 'Publicar' : 'Retirar' }}

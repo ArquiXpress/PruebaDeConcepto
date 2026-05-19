@@ -74,6 +74,8 @@ export class CheckoutPageComponent implements OnInit {
   transferReference = '';
   transferConfirmed = false;
   cashOnDeliveryNotes = '';
+  shippingAddress = '';
+  shippingCity = '';
   adminTransferAccount: DemoAdminTransferAccount = {
     bank: 'Bancolombia',
     accountType: 'Cuenta de ahorros',
@@ -97,6 +99,9 @@ export class CheckoutPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.guestPromptOpen = !this.session.isLoggedIn();
+    const user = this.session.currentUser();
+    this.shippingAddress = user?.address || '';
+    this.shippingCity = user?.city || '';
 
     this.catalog.search('', '', 0, 1000).subscribe({
       next: (page) => {
@@ -122,6 +127,14 @@ export class CheckoutPageComponent implements OnInit {
       const product = this.product(item.productId);
       return sum + (product?.price ?? 0) * item.quantity;
     }, 0);
+  }
+
+  estimatedShipping(): number {
+    const result = this.result();
+    if (result) {
+      return result.shippingCost || 0;
+    }
+    return this.cart.items().length ? 12000 : 0;
   }
 
   summaryItems(): CheckoutProduct[] {
@@ -260,7 +273,12 @@ export class CheckoutPageComponent implements OnInit {
     this.paymentSummary = null;
     this.result.set(null);
     this.loading = true;
-    this.checkout.checkout(items, paymentMethod).subscribe({
+    if (!this.shippingAddress.trim() || !this.shippingCity.trim()) {
+      this.errorMessage = 'Ingresa direccion y ciudad de envio para calcular la entrega.';
+      return;
+    }
+
+    this.checkout.checkout(items, paymentMethod, this.shippingAddress.trim(), this.shippingCity.trim()).subscribe({
       next: (response) => {
         this.paymentSummary = this.buildPaymentSummary(paymentMethod);
         this.result.set(response);

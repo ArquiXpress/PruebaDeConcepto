@@ -20,10 +20,16 @@
     </ng-template>
 
     <nav class="main-nav" aria-label="Navegacion principal">
-      <a routerLink="/catalogo">Categorias</a>
-      <a routerLink="/catalogo" [queryParams]="{ oferta: true }">Ofertas</a>
-      <a routerLink="/catalogo" [queryParams]="{ cupones: true }">Cupones</a>
-      <a routerLink="/operaciones">Vender</a>
+      <a *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN')" routerLink="/catalogo">Categorias</a>
+      <a *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN')" routerLink="/catalogo" [queryParams]="{ oferta: true }">Ofertas</a>
+      <a *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN')" routerLink="/catalogo" [queryParams]="{ cupones: true }">Cupones</a>
+      <a *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN')" routerLink="/operaciones">Vender</a>
+      <a *ngIf="session.canAccessOperations()" routerLink="/operaciones">Operaciones</a>
+      <a *ngIf="session.isOperator() || session.isAdmin() || session.hasRole('SUPERADMIN')" routerLink="/logistica">Logistica</a>
+      <button *ngIf="session.isAdmin() || session.hasRole('SUPERADMIN')" class="nav-admin-action" type="button"
+        (click)="adminUI.open()" aria-label="Panel de Admin">
+        Admin
+      </button>
     </nav>
 
     <form class="topbar-search" (ngSubmit)="search()">
@@ -38,6 +44,16 @@
     </form>
 
     <div class="topbar-menu">
+      <a *ngIf="session.isLoggedIn()" routerLink="/notificaciones" class="notification-action"
+        (click)="loadUnreadNotifications()" aria-label="Notificaciones">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M13.7 21a2 2 0 0 1-3.4 0" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" />
+        </svg>
+        <span class="counter" *ngIf="unreadNotifications()">{{ unreadNotifications() }}</span>
+      </a>
       <a *ngIf="!session.isLoggedIn()" routerLink="/login" class="login-action">Iniciar sesion</a>
       <button class="menu-toggle" type="button" (click)="toggleMenu()" aria-label="Abrir menu"
         [attr.aria-expanded]="menuOpen()">
@@ -71,10 +87,9 @@
 
       <ng-container *ngIf="session.isLoggedIn(); else menuGuestActions">
         <a routerLink="/perfil" (click)="closeMenu()">Mi perfil</a>
-        <a routerLink="/mis-compras" (click)="closeMenu()">Mis compras</a>
-        <a routerLink="/favoritos" (click)="closeMenu()">Favoritos</a>
-        <a routerLink="/notificaciones" (click)="closeMenu()">Notificaciones</a>
-        <button class="cart-link" type="button" (click)="openCart()">
+        <a *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN')" routerLink="/mis-compras" (click)="closeMenu()">Mis compras</a>
+        <a *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN')" routerLink="/favoritos" (click)="closeMenu()">Favoritos</a>
+        <button *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN')" class="cart-link" type="button" (click)="openCart()">
           Carrito
           <span class="counter">{{ cart.count() }}</span>
         </button>

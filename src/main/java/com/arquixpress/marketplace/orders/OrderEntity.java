@@ -35,6 +35,15 @@ public class OrderEntity {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal total;
 
+    @Column(name = "shipping_cost", nullable = false, precision = 12, scale = 2)
+    private BigDecimal shippingCost = BigDecimal.ZERO;
+
+    @Column(name = "shipping_address")
+    private String shippingAddress;
+
+    @Column(name = "shipping_city")
+    private String shippingCity;
+
     @Column(name = "logistics_center_id")
     private UUID logisticsCenterId;
 
@@ -89,13 +98,24 @@ public class OrderEntity {
     }
 
     public void updateShipment(ShipmentStatus next) {
-        if (next.ordinal() < shipmentStatus.ordinal()) {
-            throw new IllegalArgumentException("No se permite retroceder el estado de envio");
-        }
         if (status != OrderStatus.PAID) {
             throw new IllegalArgumentException("Solo pedidos pagados pueden cambiar estado logistico");
         }
+        if (Math.abs(next.ordinal() - shipmentStatus.ordinal()) > 1) {
+            throw new IllegalArgumentException("Solo se permite avanzar o retroceder un paso logistico");
+        }
         shipmentStatus = next;
+        updatedAt = Instant.now();
+    }
+
+    public void setShipping(String address, String city, BigDecimal cost) {
+        this.shippingAddress = address;
+        this.shippingCity = city;
+        this.shippingCost = cost == null ? BigDecimal.ZERO : cost;
+        this.total = lines.stream()
+                .map(line -> line.unitPrice().multiply(BigDecimal.valueOf(line.quantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .add(this.shippingCost);
         updatedAt = Instant.now();
     }
 
@@ -110,6 +130,9 @@ public class OrderEntity {
     public OrderStatus status() { return status; }
     public ShipmentStatus shipmentStatus() { return shipmentStatus; }
     public BigDecimal total() { return total; }
+    public BigDecimal shippingCost() { return shippingCost; }
+    public String shippingAddress() { return shippingAddress; }
+    public String shippingCity() { return shippingCity; }
     public UUID logisticsCenterId() { return logisticsCenterId; }
     public UUID logisticsOperatorId() { return logisticsOperatorId; }
     public Instant createdAt() { return createdAt; }

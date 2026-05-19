@@ -14,6 +14,9 @@ public record CheckoutResponse(
         String paymentMethod,
         String transactionId,
         BigDecimal total,
+        BigDecimal shippingCost,
+        String shippingAddress,
+        String shippingCity,
         List<CheckoutProductResponse> items,
         String message) {
 
@@ -26,6 +29,9 @@ public record CheckoutResponse(
                 payment.paymentMethod(),
                 payment.transactionId(),
                 order.total(),
+                order.shippingCost(),
+                order.shippingAddress(),
+                order.shippingCity(),
                 items,
                 message);
     }

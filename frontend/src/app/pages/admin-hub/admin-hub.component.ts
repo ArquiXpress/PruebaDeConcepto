@@ -29,6 +29,7 @@ interface SellerApplication {
   legalDocumentType: string;
   legalDocumentNumber: string;
   documentFileName?: string;
+  documentFileContent?: string;
   documentFileMimeType?: string;
   companyName?: string;
   companyDescription?: string;
@@ -248,5 +249,12 @@ export class AdminHubComponent {
       REJECTED: 'Rechazada',
     };
     return labels[status] ?? status;
+  }
+
+  documentUrl(application: SellerApplication): string {
+    if (!application.documentFileContent || !application.documentFileMimeType) {
+      return '';
+    }
+    return `data:${application.documentFileMimeType};base64,${application.documentFileContent}`;
   }
 }

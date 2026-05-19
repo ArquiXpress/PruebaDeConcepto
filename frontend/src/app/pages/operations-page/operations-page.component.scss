@@ -98,6 +98,27 @@ a {
   background: #f8fafc;
 }
 
+.appeals-block {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.appeal-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.appeal-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .items p {
   margin: 6px 0 0;
   color: #64748b;
@@ -402,6 +423,12 @@ textarea:focus {
 .ghost:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.danger {
+  margin-top: 12px;
+  color: #b42318;
+  border-color: #fecaca;
 }
 
 .add-photo {

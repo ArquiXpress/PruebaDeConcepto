@@ -50,7 +50,7 @@ public class ProductQuestionService {
                 request.question()));
         String buyerName = users.findById(buyer.id()).map(user -> user.displayName()).orElse("Un comprador");
         notifications.notify(product.sellerId(), "PRODUCT_QUESTION", "Nueva pregunta sobre " + product.title(),
-                buyerName + " pregunto: " + request.question().trim(), "/vendedor");
+                buyerName + " pregunto: " + request.question().trim(), "/vendedor/publicaciones/" + product.id());
         return ProductQuestionResponse.from(question);
     }
 

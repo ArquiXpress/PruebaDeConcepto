@@ -10,6 +10,7 @@ import { CartUIService } from './services/cart-ui.service';
 import { AdminUIService } from './services/admin-ui.service';
 import { SessionService } from './services/session.service';
 import { CatalogService } from './services/catalog.service';
+import { NotificationService } from './services/notification.service';
 import { AdminHubComponent } from './pages/admin-hub/admin-hub.component';
 import { Product } from './models/product';
 
@@ -25,6 +26,7 @@ export class AppComponent {
   productCache = signal<Map<string, Product>>(new Map());
   guestPromptOpen = signal(false);
   menuOpen = signal(false);
+  unreadNotifications = signal(0);
 
   constructor(
     public readonly session: SessionService,
@@ -33,10 +35,12 @@ export class AppComponent {
     public readonly adminUI: AdminUIService,
     private readonly auth: AuthService,
     private readonly router: Router,
-    private readonly catalog: CatalogService
+    private readonly catalog: CatalogService,
+    private readonly notifications: NotificationService
   ) {
     this.session.refreshFromBackend();
     this.loadProductsForCart();
+    this.loadUnreadNotifications();
   }
 
   loadProductsForCart(): void {
@@ -85,6 +89,17 @@ export class AppComponent {
   openCart(): void {
     this.closeMenu();
     this.cartUI.toggle();
+  }
+
+  loadUnreadNotifications(): void {
+    if (!this.session.isLoggedIn()) {
+      this.unreadNotifications.set(0);
+      return;
+    }
+    this.notifications.unreadCount().subscribe({
+      next: (response) => this.unreadNotifications.set(response.count),
+      error: () => this.unreadNotifications.set(0),
+    });
   }
 
   toggleMenu(): void {

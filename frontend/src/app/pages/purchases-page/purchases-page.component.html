@@ -12,8 +12,13 @@
     <div class="orders" *ngIf="orders().length; else noOrders">
       <article *ngFor="let order of orders()">
         <strong>Orden {{ order.orderId }}</strong>
-        <span>{{ order.status }} | {{ order.shipmentStatus }}</span>
+        <span>{{ formatStatus(order.status) }} | {{ formatStatus(order.shipmentStatus) }}</span>
+        <div class="mini-products">
+          <span *ngFor="let line of order.lines">{{ line.title }} x{{ line.quantity }}</span>
+        </div>
+        <span>Envio: {{ order.shippingCost | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
         <span>{{ order.total | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+        <button type="button" (click)="openDetail(order)">Ver detalle</button>
       </article>
     </div>
 
@@ -23,5 +28,26 @@
         <p>Cuando completes tu primera compra, aparecera aqui.</p>
       </div>
     </ng-template>
+  </section>
+
+  <div class="modal-backdrop" *ngIf="selectedOrder()" (click)="closeDetail()"></div>
+  <section class="order-detail" *ngIf="selectedOrder() as order">
+    <button type="button" class="close" (click)="closeDetail()">Cerrar</button>
+    <h2>Compra {{ order.orderId }}</h2>
+    <p><strong>Estado:</strong> {{ formatStatus(order.status) }} · {{ formatStatus(order.shipmentStatus) }}</p>
+    <p><strong>Destino:</strong> {{ order.shippingAddress || 'Sin direccion' }} · {{ order.shippingCity || 'Sin ciudad' }}</p>
+    <p><strong>Costo de envio:</strong> {{ order.shippingCost | currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+    <div class="detail-products">
+      <article *ngFor="let line of order.lines">
+        <img *ngIf="line.imageUrl" [src]="line.imageUrl" [alt]="line.title" />
+        <div>
+          <strong>{{ line.title }}</strong>
+          <span>x{{ line.quantity }} · {{ line.unitPrice | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+          <small>Vendedor: {{ line.sellerName }} · {{ line.sellerCity }}</small>
+          <small>Origen: {{ line.sellerAddress }}</small>
+        </div>
+      </article>
+    </div>
+    <h3>Total {{ order.total | currency:'COP':'symbol-narrow':'1.0-0' }}</h3>
   </section>
 </main>

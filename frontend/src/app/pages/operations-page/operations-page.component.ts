@@ -7,6 +7,7 @@ import { CatalogService, ProductPage } from '../../services/catalog.service';
 import { SessionService } from '../../services/session.service';
 import { Product } from '../../models/product';
 import { HttpClient } from '@angular/common/http';
+import { SellerProductService } from '../../services/seller-product.service';
 
 interface SellerProductDraft {
   title: string;
@@ -25,6 +26,8 @@ interface SellerProductDraft {
 })
 export class OperationsPageComponent implements OnInit {
   page = signal<ProductPage | null>(null);
+  appeals = signal<Product[]>([]);
+  adminProducts = signal<Product[]>([]);
   note = '';
   loading = false;
   operatorDisplayName = '';
@@ -60,11 +63,14 @@ export class OperationsPageComponent implements OnInit {
     private readonly catalog: CatalogService,
     private readonly auth: AuthService,
     private readonly http: HttpClient,
+    private readonly sellerProductService: SellerProductService,
     public readonly session: SessionService
   ) {}
 
   ngOnInit(): void {
     this.load();
+    this.loadAppeals();
+    this.loadAdminProducts();
   }
 
   load(): void {
@@ -86,7 +92,7 @@ export class OperationsPageComponent implements OnInit {
       const currentUserId = this.session.currentUser()?.id;
       return items.filter((product) => product.sellerId === currentUserId);
     }
-    return items;
+    return this.adminProducts();
   }
 
   createOperator(): void {
@@ -120,6 +126,12 @@ export class OperationsPageComponent implements OnInit {
     this.documentFileMimeType = file?.type ?? '';
     this.documentFileContent = '';
     if (!file) {
+      return;
+    }
+    const allowed = ['image/png', 'image/jpeg', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowed.includes(file.type)) {
+      this.sellerError = 'El documento debe ser PNG, JPG, PDF o Word.';
+      input.value = '';
       return;
     }
     const reader = new FileReader();
@@ -231,6 +243,111 @@ export class OperationsPageComponent implements OnInit {
         this.productLoading = false;
         this.productError = error?.error?.message || 'No se pudo publicar el producto.';
       },
+    });
+  }
+
+  loadAppeals(): void {
+    if (!this.session.isAdmin() && !this.session.hasRole('SUPERADMIN')) {
+      this.appeals.set([]);
+      return;
+    }
+    this.sellerProductService.listPendingAppeals().subscribe({
+      next: (appeals) => this.appeals.set(appeals),
+      error: () => {
+        this.note = 'No se pudieron cargar las apelaciones pendientes.';
+      },
+    });
+  }
+
+  loadAdminProducts(): void {
+    if (!this.session.isAdmin() && !this.session.hasRole('SUPERADMIN')) {
+      this.adminProducts.set([]);
+      return;
+    }
+    this.sellerProductService.listForOperations().subscribe({
+      next: (products) => this.adminProducts.set(products),
+      error: () => {
+        this.note = 'No se pudo cargar el catalogo operativo.';
+      },
+    });
+  }
+
+  onProductImagesSelected(event: Event, product: SellerProductDraft): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    if (!files.length) {
+      return;
+    }
+    Promise.all(files.map((file) => this.readProductImage(file)))
+      .then((images) => {
+        product.imageUrls = [...this.cleanImages(product), ...images];
+        input.value = '';
+      })
+      .catch((message) => {
+        this.productError = String(message);
+      });
+  }
+
+  removeProductAsAdmin(product: Product): void {
+    const reason = window.prompt('Motivo de eliminacion de la publicacion', 'Incumplimiento de politicas de publicacion');
+    if (reason === null) {
+      return;
+    }
+    this.sellerProductService.removeByModerator(product.id, reason).subscribe({
+      next: () => {
+        this.note = 'Publicacion eliminada y vendedor notificado.';
+        this.load();
+        this.loadAdminProducts();
+      },
+      error: (error) => {
+        this.note = error?.error?.message || 'No se pudo eliminar la publicacion.';
+      },
+    });
+  }
+
+  restoreAppeal(product: Product): void {
+    const reason = window.prompt('Nota para el vendedor', 'Apelacion aprobada. La publicacion fue restaurada.');
+    if (reason === null) {
+      return;
+    }
+    this.sellerProductService.restoreAppeal(product.id, reason).subscribe({
+      next: () => {
+        this.note = 'Apelacion aprobada y vendedor notificado.';
+        this.load();
+        this.loadAppeals();
+        this.loadAdminProducts();
+      },
+      error: (error) => {
+        this.note = error?.error?.message || 'No se pudo aprobar la apelacion.';
+      },
+    });
+  }
+
+  rejectAppeal(product: Product): void {
+    const reason = window.prompt('Motivo para mantener eliminada la publicacion', 'La publicacion sigue incumpliendo politicas.');
+    if (reason === null) {
+      return;
+    }
+    this.sellerProductService.rejectAppeal(product.id, reason).subscribe({
+      next: () => {
+        this.note = 'Apelacion rechazada y vendedor notificado.';
+        this.loadAppeals();
+      },
+      error: (error) => {
+        this.note = error?.error?.message || 'No se pudo rechazar la apelacion.';
+      },
+    });
+  }
+
+  private readProductImage(file: File): Promise<string> {
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      return Promise.reject('Solo se permiten fotos PNG o JPG para publicaciones.');
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject('No se pudo leer la foto seleccionada.');
+      reader.readAsDataURL(file);
     });
   }
 }

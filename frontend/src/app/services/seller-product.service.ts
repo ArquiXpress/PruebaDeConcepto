@@ -7,7 +7,8 @@ export interface SellerProductPayload {
   title: string;
   description: string;
   category: string;
-  imageUrl: string;
+  imageUrl?: string;
+  imageUrls?: string[];
   price: number;
   stockAvailable: number;
   status: ProductStatus;
@@ -21,6 +22,10 @@ export class SellerProductService {
 
   listMine(): Observable<Product[]> {
     return this.http.get<Product[]>(this.baseUrl);
+  }
+
+  listForOperations(): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.baseUrl}/operations-catalog`);
   }
 
   create(payload: SellerProductPayload): Observable<Product> {
@@ -41,5 +46,29 @@ export class SellerProductService {
 
   deactivate(id: string): Observable<Product> {
     return this.http.patch<Product>(`${this.baseUrl}/${id}/deactivate`, {});
+  }
+
+  removeByModerator(id: string, reason: string): Observable<Product> {
+    return this.http.patch<Product>(`${this.baseUrl}/${id}/moderation-removal`, { reason });
+  }
+
+  appeal(id: string, reason: string): Observable<Product> {
+    return this.http.patch<Product>(`${this.baseUrl}/${id}/appeal`, { reason });
+  }
+
+  detail(id: string): Observable<Product> {
+    return this.http.get<Product>(`${this.baseUrl}/${id}`);
+  }
+
+  listPendingAppeals(): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.baseUrl}/appeals`);
+  }
+
+  restoreAppeal(id: string, reason: string): Observable<Product> {
+    return this.http.patch<Product>(`${this.baseUrl}/${id}/appeal/restore`, { reason });
+  }
+
+  rejectAppeal(id: string, reason: string): Observable<Product> {
+    return this.http.patch<Product>(`${this.baseUrl}/${id}/appeal/reject`, { reason });
   }
 }

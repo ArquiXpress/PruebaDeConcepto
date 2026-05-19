@@ -116,6 +116,9 @@
               <div>
                 <span>Archivo</span>
                 <strong>{{ application.documentFileName || 'Sin archivo' }}</strong>
+                <a *ngIf="documentUrl(application)" [href]="documentUrl(application)" target="_blank" rel="noopener">
+                  Ver archivo
+                </a>
               </div>
               <div>
                 <span>Categoria</span>

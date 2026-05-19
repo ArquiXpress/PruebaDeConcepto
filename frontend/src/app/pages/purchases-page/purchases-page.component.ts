@@ -13,6 +13,7 @@ import { SessionService } from '../../services/session.service';
 })
 export class PurchasesPageComponent implements OnInit {
   orders = signal<OrderResponse[]>([]);
+  selectedOrder = signal<OrderResponse | null>(null);
   loading = false;
   error = '';
 
@@ -36,5 +37,17 @@ export class PurchasesPageComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  openDetail(order: OrderResponse): void {
+    this.selectedOrder.set(order);
+  }
+
+  closeDetail(): void {
+    this.selectedOrder.set(null);
+  }
+
+  formatStatus(value: string): string {
+    return value.toLowerCase().split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
   }
 }

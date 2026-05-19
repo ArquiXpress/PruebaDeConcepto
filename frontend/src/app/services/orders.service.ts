@@ -7,8 +7,20 @@ export interface OrderResponse {
   status: string;
   shipmentStatus: string;
   total: number;
+  shippingCost: number;
+  shippingAddress?: string | null;
+  shippingCity?: string | null;
+  buyerName?: string;
+  buyerEmail?: string;
   lines: Array<{
     productId: string;
+    title: string;
+    imageUrl: string;
+    sellerId?: string | null;
+    sellerName?: string;
+    sellerEmail?: string;
+    sellerAddress?: string;
+    sellerCity?: string;
     quantity: number;
     unitPrice: number;
   }>;

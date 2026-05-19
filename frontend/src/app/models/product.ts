@@ -11,6 +11,12 @@ export interface Product {
   price: number;
   stockAvailable: number;
   status?: ProductStatus;
+  moderationReason?: string | null;
+  moderationAt?: string | null;
+  appealNote?: string | null;
+  appealRequestedAt?: string | null;
+  appealResolutionNote?: string | null;
+  appealResolvedAt?: string | null;
   version?: number;
   createdAt?: string;
 }

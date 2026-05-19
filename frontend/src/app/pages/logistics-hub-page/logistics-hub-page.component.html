@@ -61,9 +61,9 @@
 
       <section class="orders" *ngIf="!loading() && orders().length > 0">
         <article class="order-card" *ngFor="let order of orders()">
-          <header class="order-head">
+          <header class="order-head" (click)="openOrder(order)">
             <div>
-              <span class="order-id">Pedido #{{ shortId(order.orderId) }}</span>
+              <span class="order-id">Pedido #{{ order.orderId }}</span>
               <p class="muted">Centro: {{ centerLabel(order.logisticsCenterId) }}</p>
             </div>
             <div class="order-total">{{ formatMoney(order.total) }}</div>
@@ -130,13 +130,24 @@
             <p class="muted items-title">Items incluidos:</p>
             <ul>
               <li *ngFor="let line of order.lines">
-                x{{ line.quantity }} · {{ formatMoney(line.unitPrice) }}
+                <strong>{{ line.title }}</strong>
+                <span>x{{ line.quantity }} · {{ formatMoney(line.unitPrice) }}</span>
               </li>
             </ul>
           </div>
 
           <!-- Action -->
           <footer class="actions">
+            <button
+              class="primary"
+              type="button"
+              [disabled]="!previousStatus(order.shipmentStatus) || updating() === order.orderId"
+              (click)="revert(order)"
+            >
+              <ng-container *ngIf="previousStatus(order.shipmentStatus) as previous">
+                {{ updating() === order.orderId ? 'Actualizando...' : 'Devolver a ' + visuals[previous].title }}
+              </ng-container>
+            </button>
             <button
               class="primary"
               type="button"
@@ -150,6 +161,27 @@
             </button>
           </footer>
         </article>
+      </section>
+
+      <div class="modal-backdrop" *ngIf="selectedOrder()" (click)="closeOrder()"></div>
+      <section class="order-detail" *ngIf="selectedOrder() as order">
+        <button type="button" class="close-detail" (click)="closeOrder()">Cerrar</button>
+        <h2>Pedido {{ order.orderId }}</h2>
+        <p><strong>Comprador:</strong> {{ order.buyerName || order.buyerId }}</p>
+        <p><strong>Direccion de entrega:</strong> {{ order.shippingAddress || 'Sin direccion' }} · {{ order.shippingCity || 'Sin ciudad' }}</p>
+        <p><strong>Envio:</strong> {{ formatMoney(order.shippingCost || 0) }}</p>
+        <div class="detail-products">
+          <article *ngFor="let line of order.lines">
+            <img *ngIf="line.imageUrl" [src]="line.imageUrl" [alt]="line.title" />
+            <div>
+              <strong>{{ line.title }}</strong>
+              <span>x{{ line.quantity }} · {{ formatMoney(line.unitPrice) }}</span>
+              <small>Vendedor: {{ line.sellerName }} · {{ line.sellerEmail }}</small>
+              <small>Origen: {{ line.sellerAddress }} · {{ line.sellerCity }}</small>
+            </div>
+          </article>
+        </div>
+        <h3>Total {{ formatMoney(order.total) }}</h3>
       </section>
     </div>
 

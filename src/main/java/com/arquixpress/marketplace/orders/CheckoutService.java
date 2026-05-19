@@ -3,6 +3,8 @@ package com.arquixpress.marketplace.orders;
 import com.arquixpress.marketplace.catalog.Product;
 import com.arquixpress.marketplace.catalog.ProductRepository;
 import com.arquixpress.marketplace.catalog.ProductStatus;
+import com.arquixpress.marketplace.identity.AppUser;
+import com.arquixpress.marketplace.identity.AppUserRepository;
 import com.arquixpress.marketplace.logistics.LogisticsCenter;
 import com.arquixpress.marketplace.logistics.LogisticsCenterRepository;
 import com.arquixpress.marketplace.notifications.NotificationOutbox;
@@ -34,11 +36,13 @@ public class CheckoutService {
     private final NotificationOutboxRepository outbox;
     private final NotificationService notifications;
     private final LogisticsCenterRepository centers;
+    private final AppUserRepository users;
     private final TransactionTemplate tx;
 
     public CheckoutService(ProductRepository products, OrderRepository orders, PaymentTransactionRepository payments,
             PaymentGatewayClient paymentGateway, NotificationOutboxRepository outbox,
-            NotificationService notifications, LogisticsCenterRepository centers, TransactionTemplate tx) {
+            NotificationService notifications, LogisticsCenterRepository centers, AppUserRepository users,
+            TransactionTemplate tx) {
         this.products = products;
         this.orders = orders;
         this.payments = payments;
@@ -46,6 +50,7 @@ public class CheckoutService {
         this.outbox = outbox;
         this.notifications = notifications;
         this.centers = centers;
+        this.users = users;
         this.tx = tx;
     }
 
@@ -81,24 +86,27 @@ public class CheckoutService {
     }
 
     public OrderResponse getOrder(UUID orderId) {
-        return OrderResponse.from(findOrder(orderId));
+        OrderEntity order = findOrder(orderId);
+        return enrichedOrderResponse(order);
     }
 
     public java.util.List<OrderResponse> getOrdersForBuyer(UUID buyerId) {
-        return orders.findByBuyerWithLines(buyerId).stream().map(OrderResponse::from).toList();
+        return orders.findByBuyerWithLines(buyerId).stream()
+                .map(this::enrichedOrderResponse)
+                .toList();
     }
 
     public OrderResponse updateShipment(UUID orderId, ShipmentStatus next) {
         return tx.execute(status -> {
             OrderEntity order = findOrder(orderId);
             order.updateShipment(next);
-            return OrderResponse.from(order);
+            return enrichedOrderResponse(order);
         });
     }
 
     public List<OrderResponse> listShipmentsByCenter(UUID centerId) {
         List<OrderEntity> list = centerId == null ? orders.findAllPaid() : orders.findPaidByCenter(centerId);
-        return list.stream().map(OrderResponse::from).toList();
+        return list.stream().map(this::enrichedOrderResponse).toList();
     }
 
     private PendingCheckout createPendingOrder(UUID buyerId, CheckoutRequest request, String idempotencyKey, String paymentMethod) {
@@ -107,15 +115,24 @@ public class CheckoutService {
         if (centerId != null) {
             order.assignCenter(centerId, null);
         }
+        List<Product> orderProducts = new java.util.ArrayList<>();
         for (CheckoutItemRequest item : request.items()) {
             Product product = products.findByIdAndStatus(item.productId(), ProductStatus.ACTIVE)
                     .orElseThrow(() -> new CheckoutProblem("PRODUCT_NOT_FOUND", "Producto no encontrado", HttpStatus.NOT_FOUND));
+            orderProducts.add(product);
             int reserved = products.reserveStock(item.productId(), item.quantity());
             if (reserved != 1) {
                 throw new CheckoutProblem("INSUFFICIENT_STOCK", "Stock insuficiente para el producto " + item.productId(), HttpStatus.CONFLICT);
             }
             order.addLine(product.id(), item.quantity(), product.price());
         }
+        AppUser buyer = users.findById(buyerId).orElse(null);
+        String shippingAddress = firstText(request.shippingAddress(), buyer == null ? null : buyer.address());
+        String shippingCity = firstText(request.shippingCity(), buyer == null ? null : buyer.city());
+        if (shippingAddress == null || shippingCity == null) {
+            throw new CheckoutProblem("SHIPPING_ADDRESS_REQUIRED", "Selecciona o ingresa una direccion y ciudad de envio", HttpStatus.BAD_REQUEST);
+        }
+        order.setShipping(shippingAddress, shippingCity, calculateShippingCost(orderProducts, shippingCity));
         orders.save(order);
         savePendingPayment(order.id(), idempotencyKey, order.total(), paymentMethod);
         return new PendingCheckout(order.id(), order.total());
@@ -207,6 +224,41 @@ public class CheckoutService {
         } catch (DataIntegrityViolationException ex) {
             throw new CheckoutProblem("DUPLICATE_PAYMENT", "La llave de idempotencia ya fue usada", HttpStatus.CONFLICT);
         }
+    }
+
+    private java.util.Map<UUID, Product> productMapFor(OrderEntity order) {
+        return products.findAllById(order.lines().stream().map(OrderLine::productId).distinct().toList()).stream()
+                .collect(Collectors.toMap(Product::id, Function.identity()));
+    }
+
+    private OrderResponse enrichedOrderResponse(OrderEntity order) {
+        var productById = productMapFor(order);
+        var sellerIds = productById.values().stream().map(Product::sellerId).distinct().toList();
+        var sellerById = users.findAllById(sellerIds).stream()
+                .collect(Collectors.toMap(AppUser::id, Function.identity()));
+        AppUser buyer = users.findById(order.buyerId()).orElse(null);
+        return OrderResponse.from(order, productById, sellerById, buyer);
+    }
+
+    private java.math.BigDecimal calculateShippingCost(List<Product> orderProducts, String shippingCity) {
+        if (orderProducts.isEmpty()) {
+            return java.math.BigDecimal.ZERO;
+        }
+        var sellerIds = orderProducts.stream().map(Product::sellerId).distinct().toList();
+        java.math.BigDecimal totalShipping = java.math.BigDecimal.ZERO;
+        for (AppUser seller : users.findAllById(sellerIds)) {
+            boolean sameCity = seller.city() != null && shippingCity != null
+                    && seller.city().trim().equalsIgnoreCase(shippingCity.trim());
+            totalShipping = totalShipping.add(sameCity ? java.math.BigDecimal.valueOf(8000) : java.math.BigDecimal.valueOf(18000));
+        }
+        return totalShipping;
+    }
+
+    private String firstText(String preferred, String fallback) {
+        if (preferred != null && !preferred.isBlank()) {
+            return preferred.trim();
+        }
+        return fallback == null || fallback.isBlank() ? null : fallback.trim();
     }
 
     private String requireKey(String idempotencyKey) {

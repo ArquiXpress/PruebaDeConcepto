@@ -15,6 +15,7 @@ import { PqrsPageComponent } from './pages/pqrs-page/pqrs-page.component';
 import { LogisticsHubPageComponent } from './pages/logistics-hub-page/logistics-hub-page.component';
 import { SellerPortalComponent } from './pages/seller-portal/seller-portal.component';
 import { NotificationsPageComponent } from './pages/notifications-page/notifications-page.component';
+import { SellerProductDetailPageComponent } from './pages/seller-product-detail-page/seller-product-detail-page.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -33,4 +34,5 @@ export const routes: Routes = [
   { path: 'operaciones', component: OperationsPageComponent },
   { path: 'logistica', component: LogisticsHubPageComponent },
   { path: 'vendedor', component: SellerPortalComponent },
+  { path: 'vendedor/publicaciones/:id', component: SellerProductDetailPageComponent },
 ];

@@ -42,10 +42,24 @@ public class SellerProductController {
         return sellerProducts.listMine(user.id());
     }
 
+    @GetMapping("/operations-catalog")
+    public List<SellerProductResponse> listForOperations(HttpServletRequest http) {
+        CurrentUser user = CurrentUser.from(http);
+        roles.requireAny(user, Role.ADMIN, Role.SUPERADMIN);
+        return sellerProducts.listForOperations();
+    }
+
+    @GetMapping("/appeals")
+    public List<SellerProductResponse> listPendingAppeals(HttpServletRequest http) {
+        CurrentUser user = CurrentUser.from(http);
+        roles.requireAny(user, Role.ADMIN, Role.SUPERADMIN);
+        return sellerProducts.listPendingAppeals();
+    }
+
     @GetMapping("/{id}")
     public SellerProductResponse detailMine(@PathVariable UUID id, HttpServletRequest http) {
         CurrentUser user = seller(http);
-        return sellerProducts.detailMine(user.id(), id);
+        return sellerProducts.detail(user, id);
     }
 
     @PostMapping
@@ -88,6 +102,49 @@ public class SellerProductController {
     public SellerProductResponse deactivate(@PathVariable UUID id, HttpServletRequest http) {
         CurrentUser user = seller(http);
         return sellerProducts.deactivate(user.id(), id);
+    }
+
+    @PatchMapping("/{id}/moderation-removal")
+    public SellerProductResponse removeByModerator(
+            @PathVariable UUID id,
+            @RequestBody(required = false) ModerationRequest request,
+            HttpServletRequest http
+    ) {
+        CurrentUser user = CurrentUser.from(http);
+        roles.requireAny(user, Role.ADMIN, Role.SUPERADMIN);
+        return sellerProducts.removeByModerator(user.id(), id, request);
+    }
+
+    @PatchMapping("/{id}/appeal")
+    public SellerProductResponse appeal(
+            @PathVariable UUID id,
+            @RequestBody(required = false) ModerationRequest request,
+            HttpServletRequest http
+    ) {
+        CurrentUser user = seller(http);
+        return sellerProducts.appeal(user.id(), id, request);
+    }
+
+    @PatchMapping("/{id}/appeal/restore")
+    public SellerProductResponse restoreAppeal(
+            @PathVariable UUID id,
+            @RequestBody(required = false) ModerationRequest request,
+            HttpServletRequest http
+    ) {
+        CurrentUser user = CurrentUser.from(http);
+        roles.requireAny(user, Role.ADMIN, Role.SUPERADMIN);
+        return sellerProducts.restoreAppeal(id, request);
+    }
+
+    @PatchMapping("/{id}/appeal/reject")
+    public SellerProductResponse rejectAppeal(
+            @PathVariable UUID id,
+            @RequestBody(required = false) ModerationRequest request,
+            HttpServletRequest http
+    ) {
+        CurrentUser user = CurrentUser.from(http);
+        roles.requireAny(user, Role.ADMIN, Role.SUPERADMIN);
+        return sellerProducts.rejectAppeal(id, request);
     }
 
     private CurrentUser seller(HttpServletRequest http) {
