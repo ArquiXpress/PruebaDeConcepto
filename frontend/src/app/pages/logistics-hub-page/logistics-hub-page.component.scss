@@ -134,14 +134,21 @@ a {
   background: #e0f8ec;
   color: #0f6b3c;
   margin: 8px 0;
+  animation: slideIn 0.3s ease-out;
 }
 
-.error {
+.error-msg {
   padding: 12px 14px;
   border-radius: 14px;
   background: #fde8e6;
   color: #b42318;
   margin: 8px 0;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .loading {
@@ -151,15 +158,46 @@ a {
 
 .empty {
   padding: 24px 0;
+  text-align: center;
+
+  .empty-icon {
+    margin: 0 auto 12px;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: rgba(15, 76, 129, 0.06);
+    display: grid;
+    place-items: center;
+    svg {
+      width: 28px;
+      height: 28px;
+      color: #5d748b;
+    }
+  }
 
   h3 {
     margin: 0 0 6px 0;
+  }
+
+  button.secondary {
+    margin-top: 12px;
+    border: 1.5px solid rgba(15, 76, 129, 0.25);
+    border-radius: 12px;
+    background: transparent;
+    color: #0f4c81;
+    font-weight: 600;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    &:hover {
+      background: rgba(15, 76, 129, 0.06);
+    }
   }
 }
 
 .orders {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 18px;
   margin-top: 14px;
 }
@@ -172,6 +210,12 @@ a {
   background: #ffffff;
   border: 1px solid rgba(18, 48, 74, 0.08);
   box-shadow: 0 8px 24px rgba(18, 48, 74, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 12px 32px rgba(18, 48, 74, 0.1);
+    transform: translateY(-2px);
+  }
 }
 
 .order-head {
@@ -195,32 +239,32 @@ a {
   }
 }
 
-.shipment {
-  display: grid;
-  gap: 12px;
-}
+/* ═══════════════════════════════════════════════
+   SHIPMENT VISUAL — Animated Scenes
+   ═══════════════════════════════════════════════ */
 
 .shipment-visual {
   display: grid;
-  grid-template-columns: 120px 1fr;
+  grid-template-columns: 130px 1fr;
   gap: 14px;
   align-items: center;
-  padding: 12px;
+  padding: 14px;
   border-radius: 16px;
+  transition: background 0.4s ease, border-color 0.4s ease;
   background: linear-gradient(135deg, rgba(15, 76, 129, 0.04), rgba(37, 99, 235, 0.04));
   border: 1px solid rgba(18, 48, 74, 0.08);
 
-  &.prep {
-    background: linear-gradient(135deg, #fff4e0, #fff9ee);
-    border-color: #f2c97a;
+  &.state-prep {
+    background: linear-gradient(135deg, #fff8ed, #fff4e0);
+    border-color: rgba(212, 155, 55, 0.35);
   }
-  &.route {
-    background: linear-gradient(135deg, #e4ecff, #f1f5ff);
-    border-color: #99b6f4;
+  &.state-route {
+    background: linear-gradient(135deg, #edf2ff, #dfe9ff);
+    border-color: rgba(99, 138, 232, 0.35);
   }
-  &.ok {
-    background: linear-gradient(135deg, #e0f8ec, #f0fdf4);
-    border-color: #7cc9a1;
+  &.state-ok {
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    border-color: rgba(52, 211, 153, 0.45);
   }
 
   .visual-caption {
@@ -242,241 +286,409 @@ a {
   height: 100px;
   border-radius: 12px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .scene {
   position: absolute;
   inset: 0;
+  animation: sceneIn 0.5s ease-out;
 }
 
-/* PREPARATION scene: a box getting packed */
+@keyframes sceneIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ─── PREPARATION scene ─── */
 .prep-scene {
   .desk {
     position: absolute;
     bottom: 10px;
-    left: 8px;
-    right: 8px;
-    height: 8px;
-    background: #c8936a;
-    border-radius: 4px;
+    left: 10px;
+    right: 10px;
+    height: 6px;
+    background: linear-gradient(to right, #b87333, #d4956b);
+    border-radius: 3px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
+
   .box {
     position: absolute;
-    bottom: 18px;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
-    width: 48px;
-    height: 40px;
-    background: #d9894a;
-    border-radius: 6px;
-    box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.1);
-    animation: box-bob 1.4s ease-in-out infinite;
+    width: 44px;
+    height: 36px;
+    background: linear-gradient(145deg, #d9894a, #c47536);
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(180, 100, 40, 0.3), inset 0 -5px 0 rgba(0, 0, 0, 0.1);
+    animation: box-bob 1.8s ease-in-out infinite;
   }
+
+  .box-tape {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 100%;
+    background: rgba(255, 220, 150, 0.6);
+    border-radius: 1px;
+  }
+
   .flap {
     position: absolute;
-    top: -2px;
-    width: 24px;
-    height: 6px;
-    background: #b46d31;
+    top: -4px;
+    width: 22px;
+    height: 8px;
+    background: linear-gradient(145deg, #c47536, #a85e24);
+    border-radius: 2px 2px 0 0;
     transform-origin: bottom center;
   }
   .flap-left {
     left: 0;
-    animation: flap-left 1.4s ease-in-out infinite;
+    animation: flap-left 1.8s ease-in-out infinite;
   }
   .flap-right {
     right: 0;
-    animation: flap-right 1.4s ease-in-out infinite;
+    animation: flap-right 1.8s ease-in-out infinite;
   }
-  .label {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    font-size: 18px;
-  }
+
   .sparkle {
     position: absolute;
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
-    background: #ffcc33;
+    background: #f59e0b;
     opacity: 0;
-    animation: sparkle 1.2s ease-in-out infinite;
+    animation: sparkle 1.6s ease-in-out infinite;
   }
   .s1 { top: 20px; left: 22px; animation-delay: 0s; }
-  .s2 { top: 12px; right: 24px; animation-delay: 0.4s; }
-  .s3 { bottom: 32px; left: 14px; animation-delay: 0.8s; }
+  .s2 { top: 14px; right: 20px; animation-delay: 0.5s; }
+  .s3 { bottom: 34px; left: 16px; animation-delay: 1s; }
+
+  .packing-line {
+    position: absolute;
+    height: 2px;
+    background: rgba(245, 158, 11, 0.4);
+    border-radius: 2px;
+    animation: pack-line 2s ease-in-out infinite;
+  }
+  .pl1 { top: 28px; left: 10px; width: 20px; animation-delay: 0.3s; }
+  .pl2 { top: 36px; right: 12px; width: 16px; animation-delay: 1s; }
 }
 
 @keyframes box-bob {
   0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(-3px); }
+  50% { transform: translateX(-50%) translateY(-4px); }
 }
 @keyframes flap-left {
-  0%, 100% { transform: rotate(-60deg); }
-  50% { transform: rotate(-10deg); }
+  0%, 100% { transform: rotate(-55deg); }
+  50% { transform: rotate(-5deg); }
 }
 @keyframes flap-right {
-  0%, 100% { transform: rotate(60deg); }
-  50% { transform: rotate(10deg); }
+  0%, 100% { transform: rotate(55deg); }
+  50% { transform: rotate(5deg); }
 }
 @keyframes sparkle {
-  0%, 100% { opacity: 0; transform: scale(0.6); }
-  50% { opacity: 1; transform: scale(1.2); }
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+@keyframes pack-line {
+  0%, 100% { opacity: 0; transform: scaleX(0.4); }
+  50% { opacity: 1; transform: scaleX(1); }
 }
 
-/* IN_ROUTE scene: truck moves across */
+/* ─── IN_ROUTE scene ─── */
 .route-scene {
   .road {
     position: absolute;
-    bottom: 18px;
+    bottom: 14px;
     left: 0;
     right: 0;
-    height: 4px;
-    background: repeating-linear-gradient(
-      to right,
-      #12304a 0 10px,
-      transparent 10px 20px
-    );
-    animation: road-scroll 0.6s linear infinite;
+    height: 10px;
+    background: #374151;
+    border-radius: 2px;
+
+    .road-line {
+      position: absolute;
+      top: 4px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: repeating-linear-gradient(
+        to right,
+        #fbbf24 0 8px,
+        transparent 8px 16px
+      );
+      animation: road-scroll 0.7s linear infinite;
+    }
   }
+
   .truck {
     position: absolute;
-    bottom: 18px;
-    left: 12px;
-    width: 62px;
-    height: 44px;
-    animation: truck-bob 0.5s ease-in-out infinite;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 64px;
+    height: 40px;
+    animation: truck-bob 0.6s ease-in-out infinite;
   }
-  .cab {
+
+  .truck-body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .truck-cargo {
     position: absolute;
     bottom: 6px;
     left: 0;
-    width: 62px;
-    height: 30px;
-    background: #2563eb;
-    border-radius: 6px 10px 6px 6px;
+    width: 38px;
+    height: 26px;
+    background: linear-gradient(145deg, #2563eb, #1d4ed8);
+    border-radius: 4px;
+    box-shadow: 0 3px 8px rgba(37, 99, 235, 0.3);
   }
-  .cargo {
+
+  .truck-cab {
     position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    font-size: 26px;
+    bottom: 6px;
+    right: 0;
+    width: 22px;
+    height: 20px;
+    background: linear-gradient(145deg, #3b82f6, #2563eb);
+    border-radius: 3px 8px 4px 3px;
   }
+
+  .truck-window {
+    position: absolute;
+    bottom: 18px;
+    right: 3px;
+    width: 12px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 2px 5px 2px 2px;
+  }
+
   .wheel {
     position: absolute;
     bottom: 0;
-    width: 10px;
-    height: 10px;
+    width: 11px;
+    height: 11px;
     border-radius: 50%;
-    background: #12304a;
-    border: 2px solid #fff;
-    animation: wheel-spin 0.35s linear infinite;
+    background: #1f2937;
+    border: 2px solid #6b7280;
+    animation: wheel-spin 0.4s linear infinite;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
-  .wheel-left { left: 8px; }
-  .wheel-right { right: 8px; }
+  .wl { left: 8px; }
+  .wr { right: 8px; }
+
   .dust {
     position: absolute;
-    bottom: 22px;
-    width: 6px;
-    height: 6px;
+    bottom: 18px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    background: rgba(18, 48, 74, 0.25);
+    background: rgba(107, 114, 128, 0.4);
     opacity: 0;
-    animation: dust 0.8s ease-out infinite;
+    animation: dust 1s ease-out infinite;
   }
-  .d1 { left: 4px; animation-delay: 0s; }
-  .d2 { left: 4px; animation-delay: 0.4s; }
+  .d1 { left: 12px; animation-delay: 0s; }
+  .d2 { left: 8px; animation-delay: 0.35s; }
+  .d3 { left: 16px; animation-delay: 0.7s; }
 }
 
 @keyframes road-scroll {
   from { background-position-x: 0; }
-  to { background-position-x: -20px; }
+  to { background-position-x: -16px; }
 }
 @keyframes truck-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-1px); }
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-2px); }
 }
 @keyframes wheel-spin {
   from { transform: rotate(0); }
   to { transform: rotate(360deg); }
 }
 @keyframes dust {
-  0% { opacity: 0.6; transform: translateX(0) scale(0.6); }
-  100% { opacity: 0; transform: translateX(-14px) scale(1.4); }
+  0% { opacity: 0.7; transform: translateX(0) scale(0.5); }
+  100% { opacity: 0; transform: translateX(-18px) scale(1.6); }
 }
 
-/* DELIVERED scene */
+/* ─── DELIVERED scene ─── */
 .ok-scene {
-  position: relative;
+  .house-shape {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+  }
 
-  .house {
-    position: absolute;
-    bottom: 16px;
-    right: 18px;
-    font-size: 42px;
+  .house-roof {
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-bottom: 14px solid #6b7280;
+    margin-bottom: -1px;
   }
-  .pkg {
-    position: absolute;
-    bottom: 14px;
-    left: 24px;
-    font-size: 26px;
-    animation: pkg-drop 1.6s ease-in-out infinite;
+
+  .house-body {
+    width: 40px;
+    height: 26px;
+    background: #9ca3af;
+    border-radius: 0 0 4px 4px;
+    position: relative;
   }
-  .check {
+
+  .house-door {
     position: absolute;
-    top: 12px;
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 22px;
-    animation: pop 1.6s ease-in-out infinite;
+    width: 12px;
+    height: 16px;
+    background: #4b5563;
+    border-radius: 3px 3px 0 0;
   }
+
+  .delivered-pkg {
+    position: absolute;
+    bottom: 14px;
+    left: 20px;
+    animation: pkg-arrive 2s ease-in-out infinite;
+  }
+
+  .pkg-box {
+    width: 22px;
+    height: 18px;
+    background: linear-gradient(145deg, #d9894a, #c47536);
+    border-radius: 3px;
+    box-shadow: 0 3px 6px rgba(180, 100, 40, 0.25);
+  }
+
+  .pkg-ribbon {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 100%;
+    background: rgba(255, 220, 150, 0.6);
+    border-radius: 1px;
+  }
+
+  .check-circle {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 34px;
+    height: 34px;
+    animation: check-pop 2s ease-in-out infinite;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .check-bg {
+      fill: #10b981;
+      stroke: none;
+      opacity: 0.9;
+    }
+
+    .check-mark {
+      fill: none;
+      stroke: #fff;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 24;
+      stroke-dashoffset: 24;
+      animation: draw-check 1.5s ease-out forwards;
+    }
+  }
+
+  .confetti {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 2px;
+    opacity: 0;
+    animation: confetti-pop 2.5s ease-out infinite;
+  }
+  .c1 { top: 10px; left: 15px; background: #f59e0b; animation-delay: 0s; }
+  .c2 { top: 6px; left: 55px; background: #10b981; animation-delay: 0.3s; }
+  .c3 { top: 18px; right: 14px; background: #8b5cf6; animation-delay: 0.6s; }
+  .c4 { top: 8px; left: 35px; background: #ef4444; animation-delay: 0.9s; width: 4px; height: 8px; }
+  .c5 { top: 14px; right: 30px; background: #3b82f6; animation-delay: 1.2s; width: 6px; height: 4px; }
+  .c6 { top: 4px; left: 75px; background: #f59e0b; animation-delay: 1.5s; }
 }
 
-@keyframes pkg-drop {
+@keyframes pkg-arrive {
   0%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-10px) rotate(-5deg); }
+  30% { transform: translateY(-6px) rotate(-3deg); }
   60% { transform: translateY(0) rotate(0); }
 }
-@keyframes pop {
+
+@keyframes check-pop {
   0%, 100% { transform: translateX(-50%) scale(1); }
-  50% { transform: translateX(-50%) scale(1.2); }
+  10% { transform: translateX(-50%) scale(1.15); }
+  20% { transform: translateX(-50%) scale(1); }
 }
 
-/* Stepper */
+@keyframes draw-check {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes confetti-pop {
+  0% { opacity: 0; transform: translateY(0) rotate(0); }
+  15% { opacity: 1; transform: translateY(-12px) rotate(45deg); }
+  100% { opacity: 0; transform: translateY(20px) rotate(180deg); }
+}
+
+/* ═══════════════════════════════════════════════
+   STEPPER
+   ═══════════════════════════════════════════════ */
+
 .stepper {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  gap: 4px;
   counter-reset: step;
+  position: relative;
 
   li {
     position: relative;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 10px;
+    padding: 10px 12px;
     border-radius: 12px;
-    background: rgba(18, 48, 74, 0.04);
-    color: #5d748b;
+    background: rgba(18, 48, 74, 0.03);
+    color: #94a3b8;
     font-size: 12px;
     font-weight: 600;
+    transition: all 0.35s ease;
 
     .dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: rgba(18, 48, 74, 0.2);
+      background: rgba(18, 48, 74, 0.15);
+      transition: all 0.35s ease;
+      flex-shrink: 0;
     }
 
     &.active {
-      background: rgba(15, 76, 129, 0.1);
+      background: rgba(15, 76, 129, 0.08);
       color: #0f4c81;
       .dot {
         background: #0f4c81;
@@ -486,15 +698,30 @@ a {
     &.current {
       background: linear-gradient(135deg, #0f4c81, #2563eb);
       color: #fff;
+      box-shadow: 0 4px 12px rgba(15, 76, 129, 0.25);
       .dot {
         background: #fff;
         box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35);
+        animation: pulse-dot 2s ease-in-out infinite;
       }
     }
   }
 }
 
-.items {
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35); }
+  50% { box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.15); }
+}
+
+/* Items list */
+.items-list {
+  .items-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
   ul {
     margin: 6px 0 0 0;
     padding-left: 18px;
@@ -502,11 +729,12 @@ a {
     font-size: 13px;
 
     li {
-      margin-bottom: 2px;
+      margin-bottom: 3px;
     }
   }
 }
 
+/* Actions */
 .actions {
   display: flex;
   gap: 10px;
@@ -520,18 +748,36 @@ button.secondary {
   background: linear-gradient(135deg, #0f4c81, #2563eb);
   color: #fff;
   font-weight: 700;
-  padding: 12px 18px;
+  padding: 12px 20px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.15));
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
 
   &:hover:not([disabled]) {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(15, 76, 129, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(15, 76, 129, 0.25);
+    &::after { opacity: 1; }
+  }
+
+  &:active:not([disabled]) {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(15, 76, 129, 0.2);
   }
 
   &[disabled] {
-    opacity: 0.55;
+    opacity: 0.5;
     cursor: not-allowed;
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
   }
 }
 
@@ -606,6 +852,9 @@ button.secondary {
 .detail-products small {
   color: #5d748b;
 }
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════ */
 
 @media (max-width: 960px) {
   .page {
@@ -619,6 +868,9 @@ button.secondary {
     .operator-summary {
       grid-column: 1 / -1;
     }
+  }
+  .orders {
+    grid-template-columns: 1fr;
   }
   .shipment-visual {
     grid-template-columns: 110px 1fr;
