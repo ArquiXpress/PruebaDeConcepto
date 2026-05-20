@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 
 import com.arquixpress.marketplace.notifications.NotificationOutbox;
 import com.arquixpress.marketplace.notifications.NotificationOutboxRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /*
 RF-01: registro de usuarios
@@ -197,7 +198,7 @@ class AuthServiceTest {
         );
 
         assertEquals("cliente@mail.com", result.email());
-        assertEquals("nueva123", user.password());
+        assertTrue(new BCryptPasswordEncoder().matches("nueva123", user.password()));
         verify(users).save(user);
     }
 

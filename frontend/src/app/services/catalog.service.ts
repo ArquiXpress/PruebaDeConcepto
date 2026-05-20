@@ -31,4 +31,8 @@ export class CatalogService {
   detail(id: string): Observable<Product> {
     return this.http.get<Product>(`/api/products/${id}`);
   }
+
+  offers(): Observable<Product[]> {
+    return this.http.get<Product[]>('/api/products/offers');
+  }
 }

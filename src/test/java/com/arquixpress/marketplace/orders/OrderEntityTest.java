@@ -83,16 +83,17 @@ class OrderEntityTest {
     }
 
     @Test
-    void updateShipment_shouldThrowWhenReversingState() {
+    void updateShipment_shouldThrowWhenSkippingBackwardState() {
         OrderEntity order = new OrderEntity(UUID.randomUUID(), UUID.randomUUID());
         order.markPaid();
         order.updateShipment(ShipmentStatus.IN_ROUTE);
+        order.updateShipment(ShipmentStatus.DELIVERED);
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> order.updateShipment(ShipmentStatus.PREPARATION)
         );
-        assertEquals("No se permite retroceder el estado de envio", ex.getMessage());
+        assertEquals("Solo se permite avanzar o retroceder un paso logistico", ex.getMessage());
     }
 
     @Test

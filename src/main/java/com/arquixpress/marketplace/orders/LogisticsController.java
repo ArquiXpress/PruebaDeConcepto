@@ -44,7 +44,7 @@ class LogisticsController {
     OrderResponse updateShipment(@PathVariable UUID orderId, @Valid @RequestBody ShipmentUpdateRequest request,
             HttpServletRequest http) {
         CurrentUser current = CurrentUser.from(http);
-        roles.requireAny(current, Role.LOGISTICS, Role.ADMIN);
+        roles.requireAny(current, Role.LOGISTICS, Role.ADMIN, Role.SUPERADMIN);
         return checkout.updateShipment(orderId, request.status());
     }
 

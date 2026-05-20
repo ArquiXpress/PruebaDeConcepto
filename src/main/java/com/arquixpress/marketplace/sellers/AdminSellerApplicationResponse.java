@@ -13,6 +13,7 @@ public record AdminSellerApplicationResponse(
         String legalDocumentType,
         String legalDocumentNumber,
         String documentFileName,
+        String documentFileContent,
         String documentFileMimeType,
         String companyName,
         String companyDescription,

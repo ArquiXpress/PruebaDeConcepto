@@ -75,3 +75,44 @@ a,
 .error {
   color: #b42318;
 }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(18, 48, 74, .32);
+}
+
+.notification-detail {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 31;
+  width: min(560px, calc(100vw - 32px));
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(18, 48, 74, .24);
+}
+
+.notification-detail .close {
+  justify-self: end;
+}
+
+.notification-detail p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+@media (max-width: 700px) {
+  .notification {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+  }
+}

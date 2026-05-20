@@ -16,6 +16,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.arquixpress.marketplace.identity.AppUserRepository;
 import com.arquixpress.marketplace.logistics.LogisticsCenterRepository;
 import com.arquixpress.marketplace.notifications.NotificationOutboxRepository;
 import com.arquixpress.marketplace.notifications.NotificationService;
@@ -28,6 +29,8 @@ import com.arquixpress.marketplace.payments.PaymentGatewayClient;
 import com.arquixpress.marketplace.payments.PaymentGatewayResult;
 import com.arquixpress.marketplace.payments.PaymentTransaction;
 import com.arquixpress.marketplace.payments.PaymentTransactionRepository;
+import com.arquixpress.marketplace.promotions.CouponRedemptionRepository;
+import com.arquixpress.marketplace.promotions.MarketingCouponRepository;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -40,6 +43,9 @@ class ProductStockTest {
     private NotificationOutboxRepository outbox;
     private NotificationService notifications;
     private LogisticsCenterRepository centers;
+    private AppUserRepository users;
+    private MarketingCouponRepository coupons;
+    private CouponRedemptionRepository redemptions;
     private TransactionTemplate tx;
     private CheckoutService checkoutService;
 
@@ -53,6 +59,9 @@ class ProductStockTest {
         outbox = mock(NotificationOutboxRepository.class);
         notifications = mock(NotificationService.class);
         centers = mock(LogisticsCenterRepository.class);
+        users = mock(AppUserRepository.class);
+        coupons = mock(MarketingCouponRepository.class);
+        redemptions = mock(CouponRedemptionRepository.class);
         tx = mock(TransactionTemplate.class);
 
         when(tx.execute(any(TransactionCallback.class))).thenAnswer(inv -> {
@@ -65,7 +74,10 @@ class ProductStockTest {
             return null;
         }).when(tx).executeWithoutResult(any());
 
-        checkoutService = new CheckoutService(products, orders, payments, paymentGateway, outbox, notifications, centers, tx);
+        when(users.findById(any(UUID.class))).thenReturn(Optional.empty());
+        when(users.findAllById(any())).thenReturn(List.of());
+
+        checkoutService = new CheckoutService(products, orders, payments, paymentGateway, outbox, notifications, centers, users, coupons, redemptions, tx);
     }
 
     @Test
@@ -78,7 +90,7 @@ class ProductStockTest {
 
         when(payments.findByIdempotencyKey(key)).thenReturn(Optional.empty());
         when(centers.findAll()).thenReturn(List.of());
-        when(products.findByIdAndStatus(any(UUID.class), eq(ProductStatus.ACTIVE))).thenReturn(Optional.of(product));
+        when(products.findById(any(UUID.class))).thenReturn(Optional.of(product));
         when(products.reserveStock(any(UUID.class), eq(5))).thenReturn(1);
         when(orders.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(payments.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -94,7 +106,7 @@ class ProductStockTest {
         });
         when(products.findAllById(any())).thenReturn(List.of(product));
 
-        CheckoutRequest request = new CheckoutRequest(List.of(new CheckoutItemRequest(productId, 5)), null);
+        CheckoutRequest request = request(productId, 5);
         checkoutService.checkout(buyerId, request, key);
 
         verify(products).reserveStock(any(UUID.class), eq(5));
@@ -110,10 +122,10 @@ class ProductStockTest {
 
         when(payments.findByIdempotencyKey(key)).thenReturn(Optional.empty());
         when(centers.findAll()).thenReturn(List.of());
-        when(products.findByIdAndStatus(any(UUID.class), eq(ProductStatus.ACTIVE))).thenReturn(Optional.of(product));
+        when(products.findById(any(UUID.class))).thenReturn(Optional.of(product));
         when(products.reserveStock(any(UUID.class), eq(100))).thenReturn(0);
 
-        CheckoutRequest request = new CheckoutRequest(List.of(new CheckoutItemRequest(productId, 100)), null);
+        CheckoutRequest request = request(productId, 100);
 
         CheckoutProblem ex = assertThrows(CheckoutProblem.class, () -> checkoutService.checkout(buyerId, request, key));
         assertEquals("INSUFFICIENT_STOCK", ex.code());
@@ -129,7 +141,7 @@ class ProductStockTest {
 
         when(payments.findByIdempotencyKey(key)).thenReturn(Optional.empty());
         when(centers.findAll()).thenReturn(List.of());
-        when(products.findByIdAndStatus(any(UUID.class), eq(ProductStatus.ACTIVE))).thenReturn(Optional.of(product));
+        when(products.findById(any(UUID.class))).thenReturn(Optional.of(product));
         when(products.reserveStock(any(UUID.class), eq(3))).thenReturn(1);
         when(orders.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(payments.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -144,7 +156,7 @@ class ProductStockTest {
         });
         when(products.findAllById(any())).thenReturn(List.of(product));
 
-        CheckoutRequest request = new CheckoutRequest(List.of(new CheckoutItemRequest(productId, 3)), null);
+        CheckoutRequest request = request(productId, 3);
         checkoutService.checkout(buyerId, request, key);
 
         verify(products).releaseStock(any(UUID.class), eq(3));
@@ -161,5 +173,14 @@ class ProductStockTest {
         Product product = new Product(UUID.randomUUID(), "Producto", "Desc", "cat", "http://img.png", BigDecimal.valueOf(1000), 10);
         product.updateStock(-3);
         assertEquals(0, product.stockAvailable());
+    }
+
+    private CheckoutRequest request(UUID productId, int quantity) {
+        return new CheckoutRequest(
+                List.of(new CheckoutItemRequest(productId, quantity)),
+                null,
+                "Calle 123 #45-67",
+                "Bogota"
+        );
     }
 }

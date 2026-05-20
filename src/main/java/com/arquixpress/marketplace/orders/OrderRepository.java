@@ -3,6 +3,7 @@ package com.arquixpress.marketplace.orders;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.math.BigDecimal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,4 +20,18 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
 
     @Query("select distinct o from OrderEntity o left join fetch o.lines where o.status = com.arquixpress.marketplace.orders.OrderStatus.PAID order by o.updatedAt desc")
     List<OrderEntity> findAllPaid();
+
+    @Query("""
+            select distinct o.buyerId from OrderEntity o
+            where o.status = com.arquixpress.marketplace.orders.OrderStatus.PAID
+              and o.total >= :minimum
+            """)
+    List<UUID> findBuyerIdsWithPaidTotalAtLeast(@Param("minimum") BigDecimal minimum);
+
+    @Query("""
+            select distinct o.buyerId from OrderEntity o join o.lines l
+            where o.status = com.arquixpress.marketplace.orders.OrderStatus.PAID
+              and l.productId in :productIds
+            """)
+    List<UUID> findBuyerIdsByPaidProductIds(@Param("productIds") List<UUID> productIds);
 }

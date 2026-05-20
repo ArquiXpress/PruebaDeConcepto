@@ -29,9 +29,9 @@ import com.arquixpress.marketplace.catalog.ProductSummary;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /*
-RF-06 Listar productos en vistas como landing, categorías y productos destacados. 
-RF-07 Permitir la búsqueda de productos con filtros y ordenamiento (precio, categoría, proveedor, disponibilidad y ofertas). 
-RF-08 Mostrar el detalle del producto, incluyendo imágenes, precio, descripción, proveedor, stock y precio anterior en caso de oferta. 
+RF-06 Listar productos en vistas como landing, categorías y productos destacados.
+RF-07 Permitir la búsqueda de productos con filtros y ordenamiento (precio, categoría, proveedor, disponibilidad y ofertas).
+RF-08 Mostrar el detalle del producto, incluyendo imágenes, precio, descripción, proveedor, stock y precio anterior en caso de oferta.
 */
 
 class CatalogServiceTest {
@@ -162,6 +162,30 @@ class CatalogServiceTest {
 
         verify(productRepository).searchByCategory(eq("herramientas"), any(Pageable.class));
         verify(productRepository, never()).searchAll(any(Pageable.class));
+    }
+
+    @Test
+    void search_shouldFindProductsWithAssistedTypoFallback() {
+        Product product = createProduct(
+                "Iphone XS Max",
+                "Celular en buen estado",
+                "Tecnologia",
+                new BigDecimal("700000"),
+                7
+        );
+
+        when(productRepository.searchByQuery(eq("%ipone%"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(productRepository.searchAll(argThat(pageable -> pageable.getPageSize() == 500)))
+                .thenReturn(new PageImpl<>(List.of(product)));
+
+        Page<ProductSummary> result = catalogService.search("Ipone", null, 0, 20);
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals("Iphone XS Max", result.getContent().get(0).title());
+
+        verify(productRepository).searchByQuery(eq("%ipone%"), any(Pageable.class));
+        verify(productRepository).searchAll(argThat(pageable -> pageable.getPageSize() == 500));
     }
 
     @Test

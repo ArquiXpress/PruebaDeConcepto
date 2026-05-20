@@ -1,0 +1,97 @@
+<main class="page">
+  <section class="panel">
+    <a routerLink="/vendedor" class="back-link">Volver al portal</a>
+
+    <p class="muted" *ngIf="loading()">Cargando publicacion...</p>
+    <p class="message error" *ngIf="error()">{{ error() }}</p>
+    <p class="message success" *ngIf="success()">{{ success() }}</p>
+
+    <ng-container *ngIf="product() as product">
+      <div class="head">
+        <div>
+          <p class="eyebrow">Detalle de publicacion</p>
+          <h1>{{ product.title }}</h1>
+          <p>{{ product.category }} · {{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+        </div>
+        <span class="status" [class.inactive]="product.status === 'INACTIVE'">
+          {{ product.status === 'INACTIVE' ? 'Oculta' : 'Publicada' }}
+        </span>
+      </div>
+
+      <div class="layout">
+        <div class="gallery">
+          <img *ngFor="let image of images(product)" [src]="image" [alt]="product.title" />
+        </div>
+
+        <div class="details">
+          <p>{{ product.description }}</p>
+          <strong>Stock: {{ product.stockAvailable }}</strong>
+
+          <section class="notice" *ngIf="product.stockAvailable === 0">
+            Publicacion oculta ya que no hay stock disponible.
+          </section>
+
+          <section class="notice danger" *ngIf="product.moderationReason">
+            <h2>Publicacion eliminada por administracion</h2>
+            <p>{{ product.moderationReason }}</p>
+            <small *ngIf="product.moderationAt">{{ product.moderationAt | date:'short' }}</small>
+          </section>
+
+          <section class="appeal" *ngIf="product.moderationReason">
+            <h2>Apelar decision</h2>
+            <textarea [(ngModel)]="appealReason" rows="4" placeholder="Explica por que la publicacion deberia revisarse"></textarea>
+            <button type="button" class="primary" (click)="appeal()" [disabled]="!!product.appealRequestedAt && !product.appealResolvedAt">
+              {{ product.appealRequestedAt && !product.appealResolvedAt ? 'Apelacion enviada' : 'Enviar apelacion' }}
+            </button>
+            <p class="muted" *ngIf="product.appealNote">Ultima apelacion: {{ product.appealNote }}</p>
+            <p class="muted" *ngIf="product.appealResolutionNote">
+              Respuesta de administracion: {{ product.appealResolutionNote }}
+            </p>
+          </section>
+
+          <section class="notice" *ngIf="!product.moderationReason && product.appealResolutionNote">
+            {{ product.appealResolutionNote }}
+          </section>
+        </div>
+      </div>
+
+      <section class="questions">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Preguntas y respuestas</p>
+            <h2>Responder compradores</h2>
+          </div>
+          <button type="button" class="ghost" (click)="loadQuestions(product.id)">Actualizar</button>
+        </div>
+
+        <p class="muted" *ngIf="questionsLoading()">Cargando preguntas...</p>
+        <p class="message error" *ngIf="questionError">{{ questionError }}</p>
+
+        <div class="empty" *ngIf="!questionsLoading() && !questions().length">
+          No hay preguntas para esta publicacion.
+        </div>
+
+        <article class="question" *ngFor="let question of questions()">
+          <div>
+            <strong>{{ question.question }}</strong>
+            <small>{{ question.createdAt | date:'short' }}</small>
+          </div>
+
+          <p *ngIf="question.answer; else answerForm">{{ question.answer }}</p>
+
+          <ng-template #answerForm>
+            <textarea
+              rows="3"
+              maxlength="1200"
+              [(ngModel)]="answerDrafts[question.id]"
+              placeholder="Escribe una respuesta publica para el comprador"
+            ></textarea>
+            <button type="button" class="primary" (click)="answerQuestion(question)" [disabled]="answeringId() === question.id">
+              {{ answeringId() === question.id ? 'Publicando...' : 'Responder' }}
+            </button>
+          </ng-template>
+        </article>
+      </section>
+    </ng-container>
+  </section>
+</main>

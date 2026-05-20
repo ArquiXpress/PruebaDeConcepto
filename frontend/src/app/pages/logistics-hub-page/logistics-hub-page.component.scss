@@ -737,10 +737,12 @@ a {
 /* Actions */
 .actions {
   display: flex;
+  gap: 10px;
   justify-content: flex-end;
 }
 
-button.primary {
+button.primary,
+button.secondary {
   border: none;
   border-radius: 14px;
   background: linear-gradient(135deg, #0f4c81, #2563eb);
@@ -779,6 +781,77 @@ button.primary {
   }
 }
 
+button.secondary {
+  background: linear-gradient(135deg, #34536d, #58708a);
+}
+
+.order-head {
+  cursor: pointer;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(18, 48, 74, 0.32);
+}
+
+.order-detail {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 41;
+  width: min(820px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(18, 48, 74, 0.24);
+}
+
+.close-detail {
+  justify-self: end;
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: #0f4c81;
+  background: rgba(15, 76, 129, 0.08);
+  font-weight: 800;
+}
+
+.detail-products {
+  display: grid;
+  gap: 10px;
+}
+
+.detail-products article {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(18, 48, 74, 0.08);
+}
+
+.detail-products img {
+  width: 74px;
+  height: 74px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.detail-products div {
+  display: grid;
+  gap: 3px;
+}
+
+.detail-products small {
+  color: #5d748b;
+}
 /* ═══════════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════════ */

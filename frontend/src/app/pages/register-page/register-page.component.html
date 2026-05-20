@@ -30,7 +30,10 @@
       </label>
       <label>
         Ciudad
-        <input [(ngModel)]="city" type="text" />
+        <select [(ngModel)]="city">
+          <option value="">Selecciona una ciudad</option>
+          <option *ngFor="let cityOption of cityOptions" [ngValue]="cityOption">{{ cityOption }}</option>
+        </select>
       </label>
       <label>
         Documento

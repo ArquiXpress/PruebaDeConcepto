@@ -40,7 +40,17 @@
         </ng-template>
       </section>
 
-      <section class="form-section" *ngIf="session.isSeller()">
+      <section class="block" *ngIf="session.isSeller()">
+        <div class="section-head inline">
+          <div>
+            <h3>Publicar productos</h3>
+            <p class="muted">La creacion y edicion de publicaciones se gestiona desde el portal de vendedor.</p>
+          </div>
+          <a routerLink="/vendedor" class="primary-link">Ir al portal vendedor</a>
+        </div>
+      </section>
+
+      <section class="form-section" *ngIf="false && session.isSeller()">
         <div class="section-head inline">
           <div>
             <h3>Vender un nuevo producto</h3>
@@ -75,6 +85,11 @@
               </label>
             </div>
             <div class="photos">
+              <label class="file-field">
+                Fotos del producto
+                <input type="file" accept="image/png,image/jpeg" multiple (change)="onProductImagesSelected($event, newProduct)" />
+                <span>PNG o JPG, puedes seleccionar varias</span>
+              </label>
               <div class="photo-row" *ngFor="let image of newProduct.imageUrls; let imageIndex = index">
                 <input [(ngModel)]="newProduct.imageUrls[imageIndex]" placeholder="URL de foto {{ imageIndex + 1 }}" />
                 <button type="button" class="icon-btn" (click)="removeProductImage(newProduct, imageIndex)">Quitar</button>
@@ -90,10 +105,49 @@
       <section class="block" *ngIf="session.isAdmin() || session.hasRole('SUPERADMIN')">
         <h2>Panel de administrador</h2>
         <p class="muted">Supervision general de productos y capacidad operativa.</p>
+        <p class="muted" *ngIf="note">{{ note }}</p>
+
+        <section class="appeals-block">
+          <div class="section-head inline">
+            <div>
+              <h3>Apelaciones pendientes</h3>
+              <p>Revisa publicaciones eliminadas que el vendedor pidio reconsiderar.</p>
+            </div>
+            <button type="button" class="secondary" (click)="loadAppeals()">Actualizar</button>
+          </div>
+
+          <div class="items admin" *ngIf="appeals().length; else noAppeals">
+            <article *ngFor="let product of appeals()">
+              <img class="appeal-image" [src]="product.imageUrl" [alt]="product.title" />
+              <strong>{{ product.title }}</strong>
+              <p>{{ product.category }} Â· Stock {{ product.stockAvailable }}</p>
+              <p><strong>Motivo original:</strong> {{ product.moderationReason }}</p>
+              <p><strong>Apelacion:</strong> {{ product.appealNote }}</p>
+              <small *ngIf="product.appealRequestedAt">{{ product.appealRequestedAt | date:'short' }}</small>
+              <div class="appeal-actions">
+                <button type="button" class="primary" (click)="restoreAppeal(product)">
+                  Restaurar publicacion
+                </button>
+                <button type="button" class="ghost danger" (click)="rejectAppeal(product)">
+                  Mantener eliminada
+                </button>
+              </div>
+            </article>
+          </div>
+          <ng-template #noAppeals>
+            <p class="muted empty-line">No hay apelaciones pendientes.</p>
+          </ng-template>
+        </section>
+
         <div class="items admin">
           <article *ngFor="let product of roleProducts('ADMIN')">
             <strong>{{ product.title }}</strong>
-            <p>{{ product.category }} · {{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+            <p>{{ product.category }} · {{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }} · Stock {{ product.stockAvailable }}</p>
+            <p *ngIf="product.moderationReason"><strong>Eliminada:</strong> {{ product.moderationReason }}</p>
+            <a [routerLink]="['/vendedor/publicaciones', product.id]">Ver detalle</a>
+            <button type="button" class="ghost danger" (click)="removeProductAsAdmin(product)">
+              Eliminar publicacion
+            </button>
           </article>
         </div>
       </section>
@@ -191,8 +245,8 @@
                 </label>
                 <label class="file-field">
                   Documento escaneado
-                  <input type="file" accept="image/*,.pdf" (change)="onDocumentSelected($event)" />
-                  <span>{{ documentFileName || 'JPG, PNG o PDF' }}</span>
+                  <input type="file" accept="image/png,image/jpeg,.pdf,.doc,.docx" (change)="onDocumentSelected($event)" />
+                  <span>{{ documentFileName || 'JPG, PNG, PDF o Word' }}</span>
                 </label>
               </div>
 

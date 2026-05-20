@@ -12,6 +12,7 @@ import { AppNotification, NotificationService } from '../../services/notificatio
 })
 export class NotificationsPageComponent implements OnInit {
   readonly notifications = signal<AppNotification[]>([]);
+  readonly selectedNotification = signal<AppNotification | null>(null);
   readonly loading = signal(false);
   readonly error = signal('');
 
@@ -49,5 +50,14 @@ export class NotificationsPageComponent implements OnInit {
     this.notificationService.markAllRead().subscribe({
       next: () => this.load(),
     });
+  }
+
+  openNotification(notification: AppNotification): void {
+    this.selectedNotification.set(notification);
+    this.markRead(notification);
+  }
+
+  closeNotification(): void {
+    this.selectedNotification.set(null);
   }
 }

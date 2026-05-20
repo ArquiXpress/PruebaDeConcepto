@@ -93,7 +93,7 @@ public class SellerApplicationService {
     public List<AdminSellerApplicationResponse> listForReview() {
         return jdbc.query("""
                 select sa.id, sa.user_id, u.display_name, u.email, sa.seller_type, sa.legal_document_type,
-                    sa.legal_document_number, sa.document_file_name, sa.document_file_mime_type, sa.company_name,
+                    sa.legal_document_number, sa.document_file_name, sa.document_file_content, sa.document_file_mime_type, sa.company_name,
                     sa.company_description, sa.contact_phone, sa.category, sa.products_json, sa.status,
                     sa.reviewed_by, sa.reviewed_at, sa.review_note, sa.approved_product_count, sa.created_at
                 from seller_application sa
@@ -176,7 +176,7 @@ public class SellerApplicationService {
     private AdminSellerApplicationResponse findForReview(UUID applicationId) {
         return jdbc.queryForObject("""
                 select sa.id, sa.user_id, u.display_name, u.email, sa.seller_type, sa.legal_document_type,
-                    sa.legal_document_number, sa.document_file_name, sa.document_file_mime_type, sa.company_name,
+                    sa.legal_document_number, sa.document_file_name, sa.document_file_content, sa.document_file_mime_type, sa.company_name,
                     sa.company_description, sa.contact_phone, sa.category, sa.products_json, sa.status,
                     sa.reviewed_by, sa.reviewed_at, sa.review_note, sa.approved_product_count, sa.created_at
                 from seller_application sa
@@ -222,6 +222,7 @@ public class SellerApplicationService {
                 rs.getString("legal_document_type"),
                 rs.getString("legal_document_number"),
                 rs.getString("document_file_name"),
+                rs.getString("document_file_content"),
                 rs.getString("document_file_mime_type"),
                 rs.getString("company_name"),
                 rs.getString("company_description"),

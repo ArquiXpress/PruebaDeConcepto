@@ -10,16 +10,37 @@ export class CartService {
     localStorage.setItem(this.storageKey, JSON.stringify(this.items()));
   }
 
-  add(productId: string): void {
+  add(productId: string, quantity = 1): void {
     const next = [...this.items()];
     const existing = next.find((item) => item.productId === productId);
     if (existing) {
-      existing.quantity += 1;
+      existing.quantity = Math.max(1, existing.quantity + quantity);
     } else {
-      next.push({ productId, quantity: 1 });
+      next.push({ productId, quantity: Math.max(1, quantity) });
     }
     this.items.set(next);
     this.persist();
+  }
+
+  setQuantity(productId: string, quantity: number): void {
+    const normalized = Math.max(0, Math.floor(Number(quantity) || 0));
+    if (normalized === 0) {
+      this.remove(productId);
+      return;
+    }
+    this.items.set(this.items().map((item) =>
+      item.productId === productId ? { ...item, quantity: normalized } : item
+    ));
+    this.persist();
+  }
+
+  increment(productId: string): void {
+    this.add(productId, 1);
+  }
+
+  decrement(productId: string): void {
+    const current = this.quantityFor(productId);
+    this.setQuantity(productId, current - 1);
   }
 
   remove(productId: string): void {

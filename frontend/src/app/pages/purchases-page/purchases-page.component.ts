@@ -13,6 +13,7 @@ import { SessionService } from '../../services/session.service';
 })
 export class PurchasesPageComponent implements OnInit {
   orders = signal<OrderResponse[]>([]);
+  selectedOrder = signal<OrderResponse | null>(null);
   loading = false;
   error = '';
 
@@ -36,5 +37,33 @@ export class PurchasesPageComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  openDetail(order: OrderResponse): void {
+    this.selectedOrder.set(order);
+  }
+
+  closeDetail(): void {
+    this.selectedOrder.set(null);
+  }
+
+  formatStatus(value: string): string {
+    const labels: Record<string, string> = {
+      PAID: 'Pago aprobado',
+      PENDING_PAYMENT: 'Pago pendiente',
+      PAYMENT_REJECTED: 'Pago rechazado',
+      PREPARATION: 'Preparando envio',
+      IN_ROUTE: 'En camino',
+      DELIVERED: 'Entregado',
+    };
+    return labels[value] || value.toLowerCase().split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+  }
+
+  primaryLine(order: OrderResponse): OrderResponse['lines'][number] | null {
+    return order.lines[0] || null;
+  }
+
+  extraProductCount(order: OrderResponse): number {
+    return Math.max(0, order.lines.length - 1);
   }
 }

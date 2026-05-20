@@ -20,6 +20,11 @@ export interface CheckoutResponse {
   paymentMethod: string;
   transactionId: string;
   total: number;
+  shippingCost: number;
+  discountTotal: number;
+  couponCode?: string | null;
+  shippingAddress?: string | null;
+  shippingCity?: string | null;
   items: CheckoutProduct[];
   message: string;
 }
@@ -28,10 +33,10 @@ export interface CheckoutResponse {
 export class CheckoutService {
   constructor(private readonly http: HttpClient) {}
 
-  checkout(items: CartItem[], paymentMethod: string): Observable<CheckoutResponse> {
+  checkout(items: CartItem[], paymentMethod: string, shippingAddress: string, shippingCity: string, couponCode = ''): Observable<CheckoutResponse> {
     return this.http.post<CheckoutResponse>(
       '/api/checkout',
-      { items, paymentMethod },
+      { items, paymentMethod, shippingAddress, shippingCity, couponCode },
       {
         headers: new HttpHeaders({
           'Content-Type': 'application/json',

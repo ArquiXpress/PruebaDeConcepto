@@ -30,14 +30,14 @@ public class RollbackService {
     private void insertInitialData() {
         // Usuario cliente para pruebas
         em.createNativeQuery(
-            "INSERT INTO app_user (id, email, password, display_name, roles) " +
-            "VALUES ('00000000-0000-0000-0000-000000000001', 'cliente@test.com', 'password123', 'Cliente Test', 'CLIENT')"
+            "INSERT INTO app_user (id, email, password, display_name, roles, created_at, updated_at) " +
+            "VALUES ('00000000-0000-0000-0000-000000000001', 'cliente@test.com', '$2a$10$MoEJpgnumJOhZE5QSK29m.dAOI5OwuMb1aVOXbY9lMJ3q2MtIQwRa', 'Cliente Test', 'CLIENT', NOW(), NOW())"
         ).executeUpdate();
 
         // Usuario admin para pruebas
         em.createNativeQuery(
-            "INSERT INTO app_user (id, email, password, display_name, roles) " +
-            "VALUES ('00000000-0000-0000-0000-000000000099', 'admin@test.com', 'admin123', 'Admin Test', 'ADMIN')"
+            "INSERT INTO app_user (id, email, password, display_name, roles, created_at, updated_at) " +
+            "VALUES ('00000000-0000-0000-0000-000000000099', 'admin@test.com', '$2a$10$y7sH7b168L8fxwc70t51XuSPIfNATzeyrK.supCLf86VKOZycp92C', 'Admin Test', 'ADMIN', NOW(), NOW())"
         ).executeUpdate();
     }
 }

@@ -8,6 +8,9 @@
       <a routerLink="/catalogo">Explorar catalogo</a>
     </div>
 
+    <p class="muted" *ngIf="loading">Cargando favoritos...</p>
+    <p class="error" *ngIf="error">{{ error }}</p>
+
     <div class="grid" *ngIf="products().length; else empty">
       <a class="product-card" *ngFor="let product of products()" [routerLink]="['/producto', product.id]">
         <button type="button" class="heart-btn active" (click)="toggleFavorite(product, $event)" aria-label="Quitar favorito">
@@ -24,7 +27,7 @@
     </div>
 
     <ng-template #empty>
-      <div class="empty">
+      <div class="empty" *ngIf="!loading">
         <h3>No tienes favoritos</h3>
         <p>Guarda productos desde el catalogo o desde el detalle del producto.</p>
       </div>

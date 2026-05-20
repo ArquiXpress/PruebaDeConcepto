@@ -1,0 +1,96 @@
+<main class="page">
+  <section class="panel" *ngIf="result() as checkoutResult; else noResult">
+    <div class="headline">
+      <p class="eyebrow">Compra registrada</p>
+      <h1>Tu pago fue aprobado</h1>
+      <p>{{ checkoutResult.message }}</p>
+    </div>
+
+    <div class="status-strip">
+      <div>
+        <span>Pago</span>
+        <strong class="status-pill" [ngClass]="statusClass(checkoutResult.paymentStatus)">
+          {{ formatStatus(checkoutResult.paymentStatus) }}
+        </strong>
+      </div>
+      <div>
+        <span>Pedido</span>
+        <strong class="status-pill" [ngClass]="statusClass(checkoutResult.orderStatus)">
+          {{ formatStatus(checkoutResult.orderStatus) }}
+        </strong>
+      </div>
+      <div>
+        <span>Entrega</span>
+        <strong class="status-pill" [ngClass]="statusClass(checkoutResult.shipmentStatus)">
+          {{ formatStatus(checkoutResult.shipmentStatus) }}
+        </strong>
+      </div>
+    </div>
+
+    <section class="summary-grid">
+      <article>
+        <span>Total pagado</span>
+        <strong>{{ checkoutResult.total | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+      </article>
+      <article>
+        <span>Envio</span>
+        <strong>{{ checkoutResult.shippingCost | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+      </article>
+      <article>
+        <span>Metodo de pago</span>
+        <strong>{{ checkoutResult.paymentMethod }}</strong>
+      </article>
+      <article>
+        <span>Destino</span>
+        <strong>{{ checkoutResult.shippingAddress }} - {{ checkoutResult.shippingCity }}</strong>
+      </article>
+      <article>
+        <span>ID de orden</span>
+        <strong>{{ checkoutResult.orderId }}</strong>
+      </article>
+      <article>
+        <span>ID de transaccion</span>
+        <strong>{{ checkoutResult.transactionId }}</strong>
+      </article>
+    </section>
+
+    <section class="payment-summary" *ngIf="paymentSummary() as summary">
+      <h2>{{ summary.title }}</h2>
+      <div class="payment-grid">
+        <article *ngFor="let row of summary.rows">
+          <span>{{ row.label }}</span>
+          <strong>{{ row.value }}</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="products">
+      <h2>Productos comprados</h2>
+      <article class="product-row" *ngFor="let item of checkoutResult.items">
+        <img *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.title" />
+        <div class="product-copy">
+          <strong>{{ item.title }}</strong>
+          <span>{{ item.quantity }} unidad(es)</span>
+          <small>ID producto: {{ item.productId }}</small>
+        </div>
+        <div class="product-price">
+          <span>{{ item.unitPrice | currency:'COP':'symbol-narrow':'1.0-0' }} c/u</span>
+          <strong>{{ item.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+      </article>
+    </section>
+
+    <div class="actions">
+      <a class="primary-link" routerLink="/mis-compras">Ver mis compras</a>
+      <a class="secondary-link" routerLink="/catalogo">Seguir comprando</a>
+    </div>
+  </section>
+
+  <ng-template #noResult>
+    <section class="panel empty">
+      <h1>Sin resultado reciente</h1>
+      <p>{{ errorMessage }}</p>
+      <a class="primary-link" routerLink="/catalogo">Volver al catalogo</a>
+    </section>
+  </ng-template>
+</main>

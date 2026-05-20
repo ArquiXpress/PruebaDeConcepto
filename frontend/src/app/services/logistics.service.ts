@@ -6,6 +6,13 @@ export type ShipmentStatus = 'PREPARATION' | 'IN_ROUTE' | 'DELIVERED';
 
 export interface LogisticsOrderLine {
   productId: string;
+  title: string;
+  imageUrl: string;
+  sellerId?: string | null;
+  sellerName?: string;
+  sellerEmail?: string;
+  sellerAddress?: string;
+  sellerCity?: string;
   quantity: number;
   unitPrice: number;
 }
@@ -15,9 +22,14 @@ export interface LogisticsOrder {
   status: string;
   shipmentStatus: ShipmentStatus;
   total: number;
+  shippingCost: number;
+  shippingAddress?: string | null;
+  shippingCity?: string | null;
   logisticsCenterId?: string | null;
   logisticsOperatorId?: string | null;
   buyerId?: string;
+  buyerName?: string;
+  buyerEmail?: string;
   lines: LogisticsOrderLine[];
 }
 

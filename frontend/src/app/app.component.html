@@ -1,6 +1,6 @@
 <div class="app-shell">
   <header class="topbar">
-    <a routerLink="/" class="brand">
+    <a [routerLink]="session.isLogisticsOnly() ? '/logistica' : '/'" class="brand">
       <img class="brand-mark" src="assets/brand/logo.png" alt="ArquiXpress" />
       <span class="brand-copy">
         <strong>ArquiXpress</strong>
@@ -8,25 +8,30 @@
       </span>
     </a>
 
-    <div class="delivery-target" *ngIf="session.currentUser() as user; else guestDelivery">
+    <button type="button" class="delivery-target linklike" *ngIf="!session.isLogisticsOnly() && session.currentUser() as user; else guestDelivery" routerLink="/perfil">
       <span>Enviar a {{ user.displayName }}</span>
       <small>{{ userAddress() }}</small>
-    </div>
+    </button>
     <ng-template #guestDelivery>
-      <button type="button" class="delivery-target linklike" (click)="showGuestPrompt()">
+      <button type="button" class="delivery-target linklike" *ngIf="!session.isLogisticsOnly()" (click)="showGuestPrompt()">
         <span>Ingresa tu direccion</span>
         <small>Recibe ofertas cerca de ti</small>
       </button>
     </ng-template>
 
     <nav class="main-nav" aria-label="Navegacion principal">
-      <a routerLink="/catalogo">Categorias</a>
-      <a routerLink="/catalogo" [queryParams]="{ oferta: true }">Ofertas</a>
-      <a routerLink="/catalogo" [queryParams]="{ cupones: true }">Cupones</a>
-      <a routerLink="/operaciones">Vender</a>
+      <a *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN') && !session.isLogisticsOnly()" routerLink="/catalogo">Categorias</a>
+      <a *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN') && !session.isLogisticsOnly()" routerLink="/catalogo" [queryParams]="{ oferta: true }">Ofertas</a>
+      <a *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN') && !session.isLogisticsOnly()" routerLink="/operaciones">Vender</a>
+      <a *ngIf="session.canAccessOperations()" routerLink="/operaciones">Operaciones</a>
+      <a *ngIf="session.isOperator() || session.isAdmin() || session.hasRole('SUPERADMIN')" routerLink="/logistica">Logistica</a>
+      <button *ngIf="session.isAdmin() || session.hasRole('SUPERADMIN')" class="nav-admin-action" type="button"
+        (click)="adminUI.open()" aria-label="Panel de Admin">
+        Admin
+      </button>
     </nav>
 
-    <form class="topbar-search" (ngSubmit)="search()">
+    <form class="topbar-search" *ngIf="!session.isLogisticsOnly()" (ngSubmit)="search()">
       <input name="searchTerm" [(ngModel)]="searchTerm" type="search"
         placeholder="Buscar productos, marcas o categorias" aria-label="Buscar productos" />
       <button type="submit" aria-label="Buscar">
@@ -38,6 +43,16 @@
     </form>
 
     <div class="topbar-menu">
+      <a *ngIf="session.isLoggedIn() && !session.isLogisticsOnly()" routerLink="/notificaciones" class="notification-action"
+        (click)="loadUnreadNotifications()" aria-label="Notificaciones">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M13.7 21a2 2 0 0 1-3.4 0" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" />
+        </svg>
+        <span class="counter" *ngIf="unreadNotifications()">{{ unreadNotifications() }}</span>
+      </a>
       <a *ngIf="!session.isLoggedIn()" routerLink="/login" class="login-action">Iniciar sesion</a>
       <button class="menu-toggle" type="button" (click)="toggleMenu()" aria-label="Abrir menu"
         [attr.aria-expanded]="menuOpen()">
@@ -63,18 +78,17 @@
     </header>
 
     <nav>
-      <a routerLink="/pqrs" (click)="closeMenu()">Ayuda/PQR</a>
+      <a *ngIf="!session.isLogisticsOnly()" routerLink="/pqrs" (click)="closeMenu()">Ayuda/PQR</a>
       <a *ngIf="session.isSeller()" routerLink="/vendedor" (click)="closeMenu()">Portal vendedor</a>
       <a *ngIf="session.canAccessOperations()" routerLink="/operaciones" (click)="closeMenu()">Operaciones</a>
       <a *ngIf="session.isOperator() || session.isAdmin() || session.hasRole('SUPERADMIN')" routerLink="/logistica"
         (click)="closeMenu()">Logistica</a>
 
       <ng-container *ngIf="session.isLoggedIn(); else menuGuestActions">
-        <a routerLink="/perfil" (click)="closeMenu()">Mi perfil</a>
-        <a routerLink="/mis-compras" (click)="closeMenu()">Mis compras</a>
-        <a routerLink="/favoritos" (click)="closeMenu()">Favoritos</a>
-        <a routerLink="/notificaciones" (click)="closeMenu()">Notificaciones</a>
-        <button class="cart-link" type="button" (click)="openCart()">
+        <a *ngIf="!session.isLogisticsOnly()" routerLink="/perfil" (click)="closeMenu()">Mi perfil</a>
+        <a *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN') && !session.isLogisticsOnly()" routerLink="/mis-compras" (click)="closeMenu()">Mis compras</a>
+        <a *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN') && !session.isLogisticsOnly()" routerLink="/favoritos" (click)="closeMenu()">Favoritos</a>
+        <button *ngIf="!session.isAdmin() && !session.hasRole('SUPERADMIN') && !session.isLogisticsOnly()" class="cart-link" type="button" (click)="openCart()">
           Carrito
           <span class="counter">{{ cart.count() }}</span>
         </button>
@@ -100,7 +114,7 @@
   <router-outlet />
 
   <div class="cart-modal-backdrop" *ngIf="cartUI.isOpen()" (click)="cartUI.close()"></div>
-  <aside class="cart-modal" *ngIf="cartUI.isOpen()">
+  <aside class="cart-modal" *ngIf="cartUI.isOpen() && !session.isLogisticsOnly()">
     <header>
       <strong>Carrito</strong>
       <button type="button" class="icon-btn" (click)="cartUI.close()" aria-label="Cerrar carrito">
@@ -114,8 +128,18 @@
           [alt]="productById(item.productId)?.title || item.productId" />
         <div class="cart-copy">
           <strong>{{ productById(item.productId)?.title || item.productId }}</strong>
-          <span>{{ item.quantity }} unidades</span>
+          <span>Stock {{ maxCartQuantity(item.productId) }}</span>
           <small>{{ (productById(item.productId)?.price || 0) | currency:'COP':'symbol-narrow':'1.0-0' }}</small>
+          <div class="cart-quantity-control" aria-label="Cantidad">
+            <button type="button" (click)="cart.decrement(item.productId)" [disabled]="item.quantity <= 1">-</button>
+            <input
+              type="number"
+              min="1"
+              [max]="maxCartQuantity(item.productId)"
+              [ngModel]="item.quantity"
+              (ngModelChange)="updateCartQuantity(item.productId, $event)" />
+            <button type="button" (click)="incrementCartItem(item.productId)" [disabled]="item.quantity >= maxCartQuantity(item.productId)">+</button>
+          </div>
         </div>
         <button type="button" class="icon-btn" (click)="cart.remove(item.productId)" aria-label="Quitar producto">
           <svg viewBox="0 0 24 24">

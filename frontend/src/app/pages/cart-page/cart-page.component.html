@@ -1,34 +1,63 @@
 <main class="page">
   <section class="panel">
     <div class="panel-head">
-      <h1>Carrito</h1>
+      <div>
+        <h1>Carrito</h1>
+        <p class="muted">Revisa productos, ajusta cantidades y confirma la compra.</p>
+      </div>
       <a routerLink="/catalogo">Seguir comprando</a>
     </div>
 
+    <p class="muted" *ngIf="loading">Cargando productos del carrito...</p>
+    <p class="error" *ngIf="error">{{ error }}</p>
+
     <div *ngIf="cart.items().length; else emptyState" class="cart-list">
       <article class="cart-row" *ngFor="let item of cart.items()">
-        <div>
+        <a class="item-media" [routerLink]="['/producto', item.productId]">
+          <img
+            *ngIf="product(item.productId)?.imageUrl"
+            [src]="product(item.productId)?.imageUrl"
+            [alt]="product(item.productId)?.title || item.productId" />
+        </a>
+
+        <div class="item-copy">
           <strong>{{ product(item.productId)?.title || item.productId }}</strong>
-          <p class="muted">{{ item.quantity }} unidades</p>
+          <span class="muted">Stock disponible: {{ maxQuantity(item.productId) }}</span>
+          <span>{{ (product(item.productId)?.price || 0) | currency:'COP':'symbol-narrow':'1.0-0' }} c/u</span>
         </div>
+
+        <div class="quantity-control" aria-label="Cantidad">
+          <button type="button" (click)="cart.decrement(item.productId)" [disabled]="item.quantity <= 1">-</button>
+          <input
+            type="number"
+            min="1"
+            [max]="maxQuantity(item.productId)"
+            [ngModel]="item.quantity"
+            (ngModelChange)="updateQuantity(item.productId, $event)" />
+          <button type="button" (click)="increment(item.productId)" [disabled]="item.quantity >= maxQuantity(item.productId)">+</button>
+        </div>
+
         <div class="row-actions">
-          <span>{{ (product(item.productId)?.price || 0) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
-          <button type="button" class="ghost" (click)="cart.remove(item.productId)">Quitar</button>
+          <strong>{{ lineSubtotal(item.productId, item.quantity) | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          <button type="button" class="ghost" (click)="cart.remove(item.productId)">Eliminar</button>
         </div>
       </article>
     </div>
 
     <ng-template #emptyState>
       <div class="empty">
-        <h3>El carrito está vacío</h3>
-        <p>Agrega productos desde el catálogo para continuar.</p>
+        <h3>El carrito esta vacio</h3>
+        <p>Agrega productos desde el catalogo para continuar.</p>
+        <a class="primary-link" routerLink="/catalogo">Ir al catalogo</a>
       </div>
     </ng-template>
 
-    <div class="summary">
-      <strong>Total estimado</strong>
-      <span>{{ total() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+    <div class="summary" *ngIf="cart.items().length">
+      <div>
+        <span>Total estimado</span>
+        <strong>{{ total() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+      </div>
+      <a class="primary-link" routerLink="/checkout">Ir a checkout</a>
     </div>
-    <a class="primary-link" routerLink="/checkout">Ir a checkout</a>
   </section>
 </main>

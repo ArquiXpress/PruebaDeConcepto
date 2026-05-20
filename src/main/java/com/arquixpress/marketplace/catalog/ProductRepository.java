@@ -16,6 +16,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Query("""
             select p from Product p
             where p.status = com.arquixpress.marketplace.catalog.ProductStatus.ACTIVE
+              and p.stockAvailable > 0
             order by p.createdAt desc
             """)
     Page<Product> searchAll(Pageable pageable);
@@ -23,6 +24,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Query("""
             select p from Product p
             where p.status = com.arquixpress.marketplace.catalog.ProductStatus.ACTIVE
+              and p.stockAvailable > 0
               and (lower(p.title) like :pattern or lower(p.description) like :pattern)
             order by p.createdAt desc
             """)
@@ -31,6 +33,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Query("""
             select p from Product p
             where p.status = com.arquixpress.marketplace.catalog.ProductStatus.ACTIVE
+              and p.stockAvailable > 0
               and lower(p.category) = :category
             order by p.createdAt desc
             """)
@@ -39,6 +42,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Query("""
             select p from Product p
             where p.status = com.arquixpress.marketplace.catalog.ProductStatus.ACTIVE
+              and p.stockAvailable > 0
               and (lower(p.title) like :pattern or lower(p.description) like :pattern)
               and lower(p.category) = :category
             order by p.createdAt desc
@@ -49,9 +53,28 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             Pageable pageable
     );
 
-    Optional<Product> findByIdAndStatus(UUID id, ProductStatus status);
+    @Query("""
+            select p from Product p
+            where p.id = :id
+              and p.status = :status
+              and p.stockAvailable > 0
+            """)
+    Optional<Product> findByIdAndStatus(@Param("id") UUID id, @Param("status") ProductStatus status);
 
     List<Product> findBySellerIdOrderByCreatedAtDesc(UUID sellerId);
+
+    List<Product> findAllByOrderByCreatedAtDesc();
+
+    List<Product> findByCategoryIgnoreCase(String category);
+
+    @Query("""
+            select p from Product p
+            where p.moderationReason is not null
+              and p.appealRequestedAt is not null
+              and p.appealResolvedAt is null
+            order by p.appealRequestedAt asc
+            """)
+    List<Product> findPendingAppeals();
 
     Optional<Product> findByIdAndSellerId(UUID id, UUID sellerId);
 
@@ -59,6 +82,10 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Query("""
             update Product p
             set p.stockAvailable = p.stockAvailable - :quantity,
+                p.status = case
+                    when p.stockAvailable - :quantity <= 0 then com.arquixpress.marketplace.catalog.ProductStatus.INACTIVE
+                    else p.status
+                end,
                 p.version = p.version + 1
             where p.id = :productId
               and p.status = com.arquixpress.marketplace.catalog.ProductStatus.ACTIVE

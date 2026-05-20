@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CatalogService, ProductPage } from '../../services/catalog.service';
 import { CartService } from '../../services/cart.service';
+import { CartUIService } from '../../services/cart-ui.service';
 import { SessionService } from '../../services/session.service';
 import { Product } from '../../models/product';
 import { FavoritesService } from '../../services/favorites.service';
@@ -46,6 +47,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly catalog: CatalogService,
+    public readonly cartUI: CartUIService,
     public readonly cart: CartService,
     public readonly favorites: FavoritesService,
     public readonly session: SessionService,
@@ -53,6 +55,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    if (this.session.isLogisticsOnly()) {
+      this.router.navigateByUrl('/logistica');
+      return;
+    }
     this.loadCatalog();
     this.heroTimer = window.setInterval(() => this.nextHeroSlide(), 4500);
     this.featuredTimer = window.setInterval(() => this.nextFeatured(), 5200);
@@ -84,7 +90,8 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   addToCart(product: Product): void {
     this.cart.add(product.id);
-    this.cartOpen = true;
+    this.cartOpen = false;
+    this.cartUI.open();
   }
 
   toggleFavorite(product: Product, event?: Event): void {

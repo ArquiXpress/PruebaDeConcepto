@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Product, ProductStatus } from '../../models/product';
 import { ProductQuestion, ProductQuestionService } from '../../services/product-question.service';
+import { OfferRequestResponse, PromotionsService } from '../../services/promotions.service';
 import { SellerProductPayload, SellerProductService } from '../../services/seller-product.service';
 import { SessionService } from '../../services/session.service';
 
@@ -11,9 +12,9 @@ const EMPTY_FORM: SellerProductPayload = {
   title: '',
   description: '',
   category: 'tecnologia',
-  imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
+  imageUrls: [],
   price: 0,
-  stockAvailable: 0,
+  stockAvailable: 1,
   status: 'ACTIVE',
 };
 
@@ -32,6 +33,9 @@ export class SellerPortalComponent implements OnInit {
   readonly error = signal('');
   readonly success = signal('');
   readonly questionError = signal('');
+  readonly offers = signal<OfferRequestResponse[]>([]);
+  readonly offersLoading = signal(false);
+  readonly decidingOfferId = signal<string | null>(null);
   readonly editingId = signal<string | null>(null);
   readonly questions = signal<ProductQuestion[]>([]);
   readonly answeringId = signal<string | null>(null);
@@ -79,12 +83,14 @@ export class SellerPortalComponent implements OnInit {
   constructor(
     private readonly sellerProducts: SellerProductService,
     private readonly productQuestions: ProductQuestionService,
+    private readonly promotions: PromotionsService,
     public readonly session: SessionService
   ) {}
 
   ngOnInit(): void {
     this.loadProducts();
     this.loadQuestions();
+    this.loadOffers();
   }
 
   loadProducts(): void {
@@ -119,6 +125,37 @@ export class SellerPortalComponent implements OnInit {
     });
   }
 
+  loadOffers(): void {
+    this.offersLoading.set(true);
+    this.promotions.listSellerOffers().subscribe({
+      next: (offers) => {
+        this.offers.set(offers);
+        this.offersLoading.set(false);
+      },
+      error: () => {
+        this.offersLoading.set(false);
+      },
+    });
+  }
+
+  decideOffer(offer: OfferRequestResponse, accepted: boolean): void {
+    this.decidingOfferId.set(offer.id);
+    this.error.set('');
+    this.success.set('');
+    const request = accepted ? this.promotions.acceptOffer(offer.id) : this.promotions.rejectOffer(offer.id);
+    request.subscribe({
+      next: () => {
+        this.success.set(accepted ? 'Oferta aceptada.' : 'Oferta rechazada.');
+        this.decidingOfferId.set(null);
+        this.loadOffers();
+      },
+      error: () => {
+        this.error.set('No se pudo responder la solicitud de oferta.');
+        this.decidingOfferId.set(null);
+      },
+    });
+  }
+
   answerQuestion(question: ProductQuestion): void {
     const answer = (this.answerDrafts[question.id] || '').trim();
     if (!answer) {
@@ -147,7 +184,7 @@ export class SellerPortalComponent implements OnInit {
     this.success.set('');
 
     if (!this.isValidForm()) {
-      this.error.set('Completa título, descripción, categoría, imagen, precio mayor a 0 y stock válido.');
+      this.error.set('Completa titulo, descripcion, categoria, al menos una foto, precio mayor a 0 y stock valido.');
       return;
     }
 
@@ -165,8 +202,8 @@ export class SellerPortalComponent implements OnInit {
         this.saving.set(false);
         this.loadProducts();
       },
-      error: () => {
-        this.error.set('No se pudo guardar el producto. Revisa los datos e inténtalo de nuevo.');
+      error: (error) => {
+        this.error.set(error?.error?.message || 'No se pudo guardar el producto. Revisa los datos e intentalo de nuevo.');
         this.saving.set(false);
       },
     });
@@ -179,6 +216,7 @@ export class SellerPortalComponent implements OnInit {
       description: product.description,
       category: product.category,
       imageUrl: product.imageUrl,
+      imageUrls: product.imageUrls?.length ? product.imageUrls : [product.imageUrl],
       price: product.price,
       stockAvailable: product.stockAvailable,
       status: (product.status ?? 'ACTIVE') as ProductStatus,
@@ -238,26 +276,69 @@ export class SellerPortalComponent implements OnInit {
     return this.products().find((product) => product.id === productId)?.title || 'Producto';
   }
 
+  onProductImagesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    if (!files.length) {
+      return;
+    }
+    this.error.set('');
+    Promise.all(files.map((file) => this.readImage(file)))
+      .then((images) => {
+        this.form.imageUrls = [...(this.form.imageUrls ?? []), ...images];
+        this.form.imageUrl = this.form.imageUrls[0];
+        input.value = '';
+      })
+      .catch((message) => this.error.set(String(message)));
+  }
+
+  removeFormImage(index: number): void {
+    const images = [...(this.form.imageUrls ?? [])];
+    images.splice(index, 1);
+    this.form.imageUrls = images;
+    this.form.imageUrl = images[0] ?? '';
+  }
+
+  productImages(product: Product): string[] {
+    return product.imageUrls?.length ? product.imageUrls : [product.imageUrl];
+  }
+
   private isValidForm(): boolean {
     return Boolean(
       this.form.title.trim() &&
       this.form.description.trim() &&
       this.form.category.trim() &&
-      this.form.imageUrl.trim() &&
+      ((this.form.imageUrls?.length ?? 0) > 0 || Boolean(this.form.imageUrl?.trim())) &&
       Number(this.form.price) > 0 &&
       Number(this.form.stockAvailable) >= 0
     );
   }
 
   private normalizePayload(payload: SellerProductPayload): SellerProductPayload {
+    const imageUrls = (payload.imageUrls?.length ? payload.imageUrls : [payload.imageUrl || ''])
+      .map((image) => image.trim())
+      .filter(Boolean);
     return {
       title: payload.title.trim(),
       description: payload.description.trim(),
       category: payload.category.trim().toLowerCase(),
-      imageUrl: payload.imageUrl.trim(),
+      imageUrl: imageUrls[0],
+      imageUrls,
       price: Number(payload.price),
       stockAvailable: Number(payload.stockAvailable),
       status: payload.status,
     };
+  }
+
+  private readImage(file: File): Promise<string> {
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      return Promise.reject('Solo se permiten fotos PNG o JPG para publicaciones.');
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject('No se pudo leer la foto seleccionada.');
+      reader.readAsDataURL(file);
+    });
   }
 }

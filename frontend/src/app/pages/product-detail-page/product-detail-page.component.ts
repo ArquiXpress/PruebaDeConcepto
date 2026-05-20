@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CatalogService } from '../../services/catalog.service';
 import { CartService } from '../../services/cart.service';
+import { CartUIService } from '../../services/cart-ui.service';
 import { FavoritesService } from '../../services/favorites.service';
 import { Product } from '../../models/product';
 import { ProductQuestion, ProductQuestionService } from '../../services/product-question.service';
@@ -33,6 +34,7 @@ export class ProductDetailPageComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly catalog: CatalogService,
     private readonly questionService: ProductQuestionService,
+    private readonly cartUI: CartUIService,
     public readonly cart: CartService,
     public readonly favorites: FavoritesService,
     public readonly session: SessionService
@@ -66,6 +68,11 @@ export class ProductDetailPageComponent implements OnInit {
 
   selectImage(image: string): void {
     this.selectedImage.set(image);
+  }
+
+  addToCart(productId: string): void {
+    this.cart.add(productId);
+    this.cartUI.open();
   }
 
   loadQuestions(productId: string): void {

@@ -30,7 +30,7 @@ export class LoginPageComponent {
     this.auth.login({ email: this.email, password: this.password }).subscribe({
       next: () => {
         this.loading = false;
-        this.router.navigateByUrl('/');
+        this.router.navigateByUrl(this.session.isLogisticsOnly() ? '/logistica' : '/');
       },
       error: () => {
         this.loading = false;
