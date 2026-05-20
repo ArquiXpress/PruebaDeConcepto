@@ -11,13 +11,27 @@
 
     <div class="orders" *ngIf="orders().length; else noOrders">
       <article *ngFor="let order of orders()">
-        <strong>Orden {{ order.orderId }}</strong>
-        <span>{{ formatStatus(order.status) }} | {{ formatStatus(order.shipmentStatus) }}</span>
-        <div class="mini-products">
-          <span *ngFor="let line of order.lines">{{ line.title }} x{{ line.quantity }}</span>
+        <ng-container *ngIf="primaryLine(order) as line">
+          <img class="order-image" *ngIf="line.imageUrl" [src]="line.imageUrl" [alt]="line.title" />
+          <div class="order-copy">
+            <strong>{{ line.title }}</strong>
+            <span>{{ line.quantity }} unidad(es)</span>
+            <small *ngIf="extraProductCount(order)">+{{ extraProductCount(order) }} producto(s) mas</small>
+            <small>Pedido el {{ order.createdAt | date:'mediumDate' }}</small>
+            <small>Orden {{ order.orderId }}</small>
+          </div>
+        </ng-container>
+
+        <div class="order-state">
+          <span class="status-pill">{{ formatStatus(order.status) }}</span>
+          <span class="status-pill logistics">{{ formatStatus(order.shipmentStatus) }}</span>
         </div>
-        <span>Envio: {{ order.shippingCost | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
-        <span>{{ order.total | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+
+        <div class="order-total">
+          <span>Envio {{ order.shippingCost | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+          <strong>{{ order.total | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+
         <button type="button" (click)="openDetail(order)">Ver detalle</button>
       </article>
     </div>
@@ -34,20 +48,23 @@
   <section class="order-detail" *ngIf="selectedOrder() as order">
     <button type="button" class="close" (click)="closeDetail()">Cerrar</button>
     <h2>Compra {{ order.orderId }}</h2>
-    <p><strong>Estado:</strong> {{ formatStatus(order.status) }} · {{ formatStatus(order.shipmentStatus) }}</p>
-    <p><strong>Destino:</strong> {{ order.shippingAddress || 'Sin direccion' }} · {{ order.shippingCity || 'Sin ciudad' }}</p>
+    <p><strong>Fecha del pedido:</strong> {{ order.createdAt | date:'medium' }}</p>
+    <p><strong>Estado:</strong> {{ formatStatus(order.status) }} - {{ formatStatus(order.shipmentStatus) }}</p>
+    <p><strong>Destino:</strong> {{ order.shippingAddress || 'Sin direccion' }} - {{ order.shippingCity || 'Sin ciudad' }}</p>
     <p><strong>Costo de envio:</strong> {{ order.shippingCost | currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+
     <div class="detail-products">
       <article *ngFor="let line of order.lines">
         <img *ngIf="line.imageUrl" [src]="line.imageUrl" [alt]="line.title" />
         <div>
           <strong>{{ line.title }}</strong>
-          <span>x{{ line.quantity }} · {{ line.unitPrice | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
-          <small>Vendedor: {{ line.sellerName }} · {{ line.sellerCity }}</small>
+          <span>{{ line.quantity }} unidad(es) - {{ line.unitPrice | currency:'COP':'symbol-narrow':'1.0-0' }} c/u</span>
+          <small>Vendedor: {{ line.sellerName }} - {{ line.sellerCity }}</small>
           <small>Origen: {{ line.sellerAddress }}</small>
         </div>
       </article>
     </div>
+
     <h3>Total {{ order.total | currency:'COP':'symbol-narrow':'1.0-0' }}</h3>
   </section>
 </main>

@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Product } from '../../models/product';
 import { CartService } from '../../services/cart.service';
 import { AuthService, LoginResponse } from '../../services/auth.service';
 import { CatalogService } from '../../services/catalog.service';
 import { CheckoutProduct, CheckoutResponse, CheckoutService } from '../../services/checkout.service';
 import { SessionService } from '../../services/session.service';
+import { CITY_OPTIONS } from '../../shared/city-options';
 
 const PAYMENT_METHOD_OPTIONS = [
   'Tarjeta de credito',
@@ -55,6 +56,7 @@ interface PaymentSummary {
 export class CheckoutPageComponent implements OnInit {
   readonly paymentMethodOptions = PAYMENT_METHOD_OPTIONS;
   readonly pseBankOptions = PSE_BANK_OPTIONS;
+  readonly cityOptions = CITY_OPTIONS;
   readonly expiryMonths = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'));
   readonly expiryYears = Array.from({ length: 12 }, (_, index) => String(new Date().getFullYear() + index));
   result = signal<CheckoutResponse | null>(null);
@@ -76,6 +78,7 @@ export class CheckoutPageComponent implements OnInit {
   cashOnDeliveryNotes = '';
   shippingAddress = '';
   shippingCity = '';
+  couponCode = '';
   adminTransferAccount: DemoAdminTransferAccount = {
     bank: 'Bancolombia',
     accountType: 'Cuenta de ahorros',
@@ -94,14 +97,15 @@ export class CheckoutPageComponent implements OnInit {
     private readonly auth: AuthService,
     private readonly catalog: CatalogService,
     private readonly checkout: CheckoutService,
-    public readonly session: SessionService
+    public readonly session: SessionService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
     this.guestPromptOpen = !this.session.isLoggedIn();
     const user = this.session.currentUser();
     this.shippingAddress = user?.address || '';
-    this.shippingCity = user?.city || '';
+    this.shippingCity = this.normalizeCity(user?.city || '');
 
     this.catalog.search('', '', 0, 1000).subscribe({
       next: (page) => {
@@ -207,6 +211,23 @@ export class CheckoutPageComponent implements OnInit {
     this.transferReference = this.transferReference.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 18);
   }
 
+  normalizeCity(value: string): string {
+    const normalized = value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+    return this.cityOptions.find((city) => this.normalizedCityKey(city) === normalized) || value;
+  }
+
+  private normalizedCityKey(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
   cardBrand(): string {
     const digits = this.cardNumber.replace(/\D/g, '');
     if (!digits) {
@@ -275,15 +296,21 @@ export class CheckoutPageComponent implements OnInit {
     this.loading = true;
     if (!this.shippingAddress.trim() || !this.shippingCity.trim()) {
       this.errorMessage = 'Ingresa direccion y ciudad de envio para calcular la entrega.';
+      this.loading = false;
       return;
     }
 
-    this.checkout.checkout(items, paymentMethod, this.shippingAddress.trim(), this.shippingCity.trim()).subscribe({
+    this.checkout.checkout(items, paymentMethod, this.shippingAddress.trim(), this.shippingCity.trim(), this.couponCode.trim()).subscribe({
       next: (response) => {
         this.paymentSummary = this.buildPaymentSummary(paymentMethod);
         this.result.set(response);
+        sessionStorage.setItem('arquixpress-checkout-result', JSON.stringify({
+          checkoutResult: response,
+          paymentSummary: this.paymentSummary,
+        }));
         this.cart.clear();
         this.loading = false;
+        this.router.navigateByUrl('/checkout/resultado');
       },
       error: (error) => {
         this.errorMessage = error?.error?.message || 'No se pudo completar el checkout.';

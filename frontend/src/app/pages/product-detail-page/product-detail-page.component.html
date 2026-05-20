@@ -30,7 +30,7 @@
       <strong class="shipping">Llega gratis mañana</strong>
       <span>Mas detalles y formas de entrega</span>
       <p>Stock disponible: {{ item.stockAvailable }}</p>
-      <button type="button" class="primary" (click)="cart.add(item.id)">Agregar al carrito</button>
+      <button type="button" class="primary" (click)="addToCart(item.id)">Agregar al carrito</button>
       <button type="button" class="secondary" (click)="favorites.toggle(item.id)">
         {{ favorites.has(item.id) ? 'Quitar de favoritos' : 'Agregar a favoritos' }}
       </button>

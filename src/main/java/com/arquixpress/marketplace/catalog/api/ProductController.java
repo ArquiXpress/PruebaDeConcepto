@@ -6,9 +6,11 @@ import com.arquixpress.marketplace.catalog.application.CatalogService;
 import com.arquixpress.marketplace.identity.CurrentUser;
 import com.arquixpress.marketplace.identity.Role;
 import com.arquixpress.marketplace.identity.RoleGuard;
+import com.arquixpress.marketplace.promotions.PromotionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Min;
 import java.util.UUID;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,11 +30,14 @@ public class ProductController {
     private final CatalogService catalog;
     private final com.arquixpress.marketplace.catalog.ProductRepository products;
     private final RoleGuard roles;
+    private final PromotionService promotions;
 
-    public ProductController(CatalogService catalog, com.arquixpress.marketplace.catalog.ProductRepository products, RoleGuard roles) {
+    public ProductController(CatalogService catalog, com.arquixpress.marketplace.catalog.ProductRepository products,
+            RoleGuard roles, PromotionService promotions) {
         this.catalog = catalog;
         this.products = products;
         this.roles = roles;
+        this.promotions = promotions;
     }
 
     @GetMapping
@@ -47,6 +52,11 @@ public class ProductController {
     @GetMapping("/{id}")
     public ProductSummary detail(@PathVariable UUID id) {
         return catalog.detail(id);
+    }
+
+    @GetMapping("/offers")
+    public List<ProductSummary> offers() {
+        return promotions.activeOfferProducts();
     }
 
     @PostMapping

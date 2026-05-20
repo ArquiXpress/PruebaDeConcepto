@@ -8,5 +8,9 @@ public record CheckoutRequest(
         @NotEmpty List<@Valid CheckoutItemRequest> items,
         String paymentMethod,
         String shippingAddress,
-        String shippingCity) {
+        String shippingCity,
+        String couponCode) {
+    public CheckoutRequest(List<CheckoutItemRequest> items, String paymentMethod, String shippingAddress, String shippingCity) {
+        this(items, paymentMethod, shippingAddress, shippingCity, null);
+    }
 }

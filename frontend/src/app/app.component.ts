@@ -108,7 +108,21 @@ export class AppComponent {
 
   openCart(): void {
     this.closeMenu();
-    this.cartUI.toggle();
+    this.cartUI.open();
+  }
+
+  maxCartQuantity(productId: string): number {
+    return this.productById(productId)?.stockAvailable ?? 99;
+  }
+
+  updateCartQuantity(productId: string, quantity: number): void {
+    const max = this.maxCartQuantity(productId);
+    this.cart.setQuantity(productId, Math.min(Math.max(1, Number(quantity) || 1), max));
+  }
+
+  incrementCartItem(productId: string): void {
+    const max = this.maxCartQuantity(productId);
+    this.cart.setQuantity(productId, Math.min(this.cart.quantityFor(productId) + 1, max));
   }
 
   loadUnreadNotifications(): void {

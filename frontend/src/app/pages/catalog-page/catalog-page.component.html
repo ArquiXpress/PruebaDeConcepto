@@ -1,21 +1,21 @@
 <main class="page">
   <section class="panel">
     <div class="panel-head">
-      <h1>Catálogo</h1>
+      <h1>{{ offersMode ? 'Ofertas' : 'Catalogo' }}</h1>
       <a routerLink="/">Volver al inicio</a>
     </div>
 
-    <div class="filters">
-      <input [(ngModel)]="query" placeholder="Buscar por nombre o descripción" />
+    <div class="filters" *ngIf="!offersMode">
+      <input [(ngModel)]="query" placeholder="Buscar por nombre o descripcion" />
       <select [(ngModel)]="category">
-        <option value="">Todas las categorías</option>
+        <option value="">Todas las categorias</option>
         <option *ngFor="let item of categories" [value]="item">{{ item | titlecase }}</option>
       </select>
       <button type="button" class="primary" (click)="loadCatalog()">Aplicar</button>
     </div>
 
     <p class="error" *ngIf="error">{{ error }}</p>
-    <p class="muted" *ngIf="loading">Cargando catálogo...</p>
+    <p class="muted" *ngIf="loading">Cargando catalogo...</p>
 
     <div class="product-grid" *ngIf="page()?.content?.length; else emptyState">
       <article class="product-card" *ngFor="let product of page()?.content; trackBy: trackById">
@@ -26,8 +26,14 @@
         <h3><a [routerLink]="['/producto', product.id]">{{ product.title }}</a></h3>
         <p>{{ product.description }}</p>
         <div class="meta">
-          <strong>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          <strong *ngIf="!product.salePrice">{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          <strong *ngIf="product.salePrice">
+            {{ product.salePrice | currency:'COP':'symbol-narrow':'1.0-0' }}
+            <small>{{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</small>
+          </strong>
+          <span *ngIf="product.discountPercent" class="discount-badge">-{{ product.discountPercent }}%</span>
           <span>Stock: {{ product.stockAvailable }}</span>
+          <span *ngIf="product.offerEndsAt">Hasta {{ product.offerEndsAt | date:'mediumDate' }}</span>
         </div>
         <div class="actions">
           <button type="button" (click)="addToCart(product)">Agregar</button>
@@ -42,7 +48,7 @@
     <ng-template #emptyState>
       <div class="empty">
         <h3>Sin productos</h3>
-        <p>La primera carga depende del backend y de las migraciones PostgreSQL.</p>
+        <p>{{ offersMode ? 'No hay ofertas vigentes en este momento.' : 'La primera carga depende del backend y de las migraciones PostgreSQL.' }}</p>
       </div>
     </ng-template>
   </section>

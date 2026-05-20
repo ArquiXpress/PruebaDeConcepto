@@ -48,6 +48,22 @@ export class PurchasesPageComponent implements OnInit {
   }
 
   formatStatus(value: string): string {
-    return value.toLowerCase().split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+    const labels: Record<string, string> = {
+      PAID: 'Pago aprobado',
+      PENDING_PAYMENT: 'Pago pendiente',
+      PAYMENT_REJECTED: 'Pago rechazado',
+      PREPARATION: 'Preparando envio',
+      IN_ROUTE: 'En camino',
+      DELIVERED: 'Entregado',
+    };
+    return labels[value] || value.toLowerCase().split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+  }
+
+  primaryLine(order: OrderResponse): OrderResponse['lines'][number] | null {
+    return order.lines[0] || null;
+  }
+
+  extraProductCount(order: OrderResponse): number {
+    return Math.max(0, order.lines.length - 1);
   }
 }

@@ -159,6 +159,22 @@ select {
   overflow-wrap: anywhere;
 }
 
+.meta small {
+  color: #8a99aa;
+  font-weight: 700;
+  text-decoration: line-through;
+}
+
+.discount-badge {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: #e0f8ec;
+  color: #0f6b3c;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 a {
   color: #0f4c81;
   text-decoration: none;

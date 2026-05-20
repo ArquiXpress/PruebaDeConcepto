@@ -143,6 +143,24 @@ export class LogisticsHubPageComponent implements OnInit {
     return match ? match.displayName : centerId.substring(0, 8);
   }
 
+  hasAssignedCenter(): boolean {
+    const ctx = this.context();
+    return Boolean(ctx?.centerId || ctx?.centerName);
+  }
+
+  emptyTitle(): string {
+    return this.hasAssignedCenter() ? 'Sin pedidos por procesar' : 'Sin sede logistica asignada';
+  }
+
+  emptyMessage(): string {
+    const userName = this.session.currentUser()?.displayName || 'Este operador';
+    if (!this.hasAssignedCenter()) {
+      return `${userName} todavia no tiene una sede logistica asignada. Un administrador debe asignar el operador a un centro para que pueda ver pedidos de esa sede.`;
+    }
+    const centerName = this.context()?.centerName || 'tu sede';
+    return `No hay pedidos pagados asignados a ${centerName} en este momento.`;
+  }
+
   shortId(id: string): string {
     return id.substring(0, 8).toUpperCase();
   }

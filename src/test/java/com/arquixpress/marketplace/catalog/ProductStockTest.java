@@ -29,6 +29,8 @@ import com.arquixpress.marketplace.payments.PaymentGatewayClient;
 import com.arquixpress.marketplace.payments.PaymentGatewayResult;
 import com.arquixpress.marketplace.payments.PaymentTransaction;
 import com.arquixpress.marketplace.payments.PaymentTransactionRepository;
+import com.arquixpress.marketplace.promotions.CouponRedemptionRepository;
+import com.arquixpress.marketplace.promotions.MarketingCouponRepository;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -42,6 +44,8 @@ class ProductStockTest {
     private NotificationService notifications;
     private LogisticsCenterRepository centers;
     private AppUserRepository users;
+    private MarketingCouponRepository coupons;
+    private CouponRedemptionRepository redemptions;
     private TransactionTemplate tx;
     private CheckoutService checkoutService;
 
@@ -56,6 +60,8 @@ class ProductStockTest {
         notifications = mock(NotificationService.class);
         centers = mock(LogisticsCenterRepository.class);
         users = mock(AppUserRepository.class);
+        coupons = mock(MarketingCouponRepository.class);
+        redemptions = mock(CouponRedemptionRepository.class);
         tx = mock(TransactionTemplate.class);
 
         when(tx.execute(any(TransactionCallback.class))).thenAnswer(inv -> {
@@ -71,7 +77,7 @@ class ProductStockTest {
         when(users.findById(any(UUID.class))).thenReturn(Optional.empty());
         when(users.findAllById(any())).thenReturn(List.of());
 
-        checkoutService = new CheckoutService(products, orders, payments, paymentGateway, outbox, notifications, centers, users, tx);
+        checkoutService = new CheckoutService(products, orders, payments, paymentGateway, outbox, notifications, centers, users, coupons, redemptions, tx);
     }
 
     @Test

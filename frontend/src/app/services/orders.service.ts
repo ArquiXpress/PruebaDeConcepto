@@ -10,6 +10,7 @@ export interface OrderResponse {
   shippingCost: number;
   shippingAddress?: string | null;
   shippingCity?: string | null;
+  createdAt: string;
   buyerName?: string;
   buyerEmail?: string;
   lines: Array<{

@@ -4,7 +4,10 @@
   <div class="admin-header">
     <div>
       <h2>Admin Hub</h2>
-      <p class="admin-subtitle">Consulta usuarios y asigna roles segun tu nivel de acceso</p>
+      <p class="admin-subtitle">Gestiona usuarios, vendedores, cupones y campañas de ofertas</p>
+      <div class="admin-shortcuts" *ngIf="session.isAdmin() || session.hasRole('SUPERADMIN')">
+        <button type="button" (click)="activeTab.set('promotions')">Crear campaña</button>
+      </div>
     </div>
     <button type="button" class="close-btn" (click)="adminUI.close()" aria-label="Cerrar">
       <svg viewBox="0 0 24 24">
@@ -31,6 +34,10 @@
           (click)="activeTab.set('sellerApplications')">
           Solicitudes de vendedores
           <span *ngIf="pendingSellerApplications()">{{ pendingSellerApplications() }}</span>
+        </button>
+        <button type="button" [class.active]="activeTab() === 'promotions'" (click)="activeTab.set('promotions')">
+          Campañas
+          <span *ngIf="pendingOffers()">{{ pendingOffers() }}</span>
         </button>
       </div>
 
@@ -157,6 +164,115 @@
             </p>
           </article>
         </div>
+      </ng-container>
+
+      <ng-container *ngIf="activeTab() === 'promotions'">
+        <div *ngIf="promotionsLoading" class="loading">Cargando cupones y ofertas...</div>
+
+        <div class="campaign-intro">
+          <h3>Hub de campañas</h3>
+          <p>Crea cupones para clientes o solicita a vendedores autorizacion para poner productos especificos en oferta durante una vigencia definida.</p>
+        </div>
+
+        <div class="promo-layout">
+          <section class="promo-card">
+            <h3>Campaña de cupones</h3>
+            <label>
+              Codigo
+              <input [(ngModel)]="couponForm.code" />
+            </label>
+            <label>
+              Titulo
+              <input [(ngModel)]="couponForm.title" />
+            </label>
+            <label>
+              Mensaje para el cliente
+              <textarea rows="3" [(ngModel)]="couponForm.description"></textarea>
+            </label>
+            <div class="field-grid">
+              <label>
+                Descuento %
+                <input type="number" min="1" max="90" [(ngModel)]="couponForm.discountPercent" />
+              </label>
+              <label>
+                Audiencia
+                <select [(ngModel)]="couponForm.targetType">
+                  <option value="ALL_CLIENTS">Todos los clientes</option>
+                  <option value="HIGH_VALUE_BUYERS">Compras sobre monto</option>
+                  <option value="CATEGORY_BUYERS">Compradores por categoria</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Valor de audiencia
+              <input [(ngModel)]="couponForm.targetValue" placeholder="tecnologia o 1000000" />
+            </label>
+            <button type="button" class="approve-btn" (click)="createCoupon()">Crear y notificar</button>
+          </section>
+
+          <section class="promo-card">
+            <h3>Campaña de ofertas con vendedor</h3>
+            <label>
+              Vendedor
+              <select [(ngModel)]="offerForm.sellerId">
+                <option value="">Selecciona vendedor</option>
+                <option *ngFor="let seller of sellersFromProducts()" [value]="seller.id">{{ seller.name }}</option>
+              </select>
+            </label>
+            <label>
+              Titulo
+              <input [(ngModel)]="offerForm.title" />
+            </label>
+            <label>
+              Mensaje para el vendedor
+              <textarea rows="3" [(ngModel)]="offerForm.message"></textarea>
+            </label>
+            <label>
+              Descuento %
+              <input type="number" min="1" max="90" [(ngModel)]="offerForm.discountPercent" />
+            </label>
+            <div class="field-grid">
+              <label>
+                Inicio
+                <input type="datetime-local" [(ngModel)]="offerForm.startsAt" />
+              </label>
+              <label>
+                Fin
+                <input type="datetime-local" [(ngModel)]="offerForm.endsAt" />
+              </label>
+            </div>
+
+            <div class="offer-products" *ngIf="offerProductsForSeller().length">
+              <label class="product-check" *ngFor="let product of offerProductsForSeller()">
+                <input type="checkbox" [checked]="offerForm.productIds.has(product.id)" (change)="toggleOfferProduct(product.id)" />
+                <img [src]="product.imageUrl" [alt]="product.title" />
+                <span>
+                  <strong>{{ product.title }}</strong>
+                  <small>{{ product.category }} · {{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</small>
+                </span>
+              </label>
+            </div>
+            <button type="button" class="approve-btn" (click)="createOffer()">Enviar solicitud</button>
+          </section>
+        </div>
+
+        <section class="promo-history">
+          <h3>Cupones enviados</h3>
+          <article *ngFor="let coupon of coupons()">
+            <strong>{{ coupon.code }} · {{ coupon.discountPercent }}%</strong>
+            <span>{{ coupon.title }}</span>
+            <small>{{ coupon.targetType }} {{ coupon.targetValue || '' }} · {{ coupon.createdAt | date:'short' }}</small>
+          </article>
+        </section>
+
+        <section class="promo-history">
+          <h3>Solicitudes de oferta</h3>
+          <article *ngFor="let offer of offers()">
+            <strong>{{ offer.title }} · {{ offer.discountPercent }}%</strong>
+            <span>{{ offer.sellerName || offer.sellerEmail }} · {{ offer.status }}</span>
+            <small>{{ offer.products.length }} producto(s) · {{ offer.startsAt | date:'short' }} a {{ offer.endsAt | date:'short' }}</small>
+          </article>
+        </section>
       </ng-container>
     </ng-container>
   </div>

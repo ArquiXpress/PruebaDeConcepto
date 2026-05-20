@@ -1,9 +1,24 @@
 .page { min-height: 100vh; padding: 32px; color: #12304a; }
 .panel { background: #fff; border-radius: 16px; padding: 24px; border: 1px solid rgba(18,48,74,.08); }
-.panel-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.panel-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 18px; }
 .orders { display: grid; gap: 12px; }
-.orders article { display: grid; gap: 6px; padding: 14px; border-radius: 8px; background: rgba(15,76,129,.05); }
-.mini-products { display: flex; flex-wrap: wrap; gap: 6px; color: #58708a; }
+.orders article {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) auto auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(15,76,129,.05);
+}
+.order-image { width: 78px; height: 78px; object-fit: cover; border-radius: 10px; background: #f8fafc; }
+.order-copy { display: grid; gap: 3px; min-width: 0; }
+.order-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.order-copy span, .order-copy small, .order-total span { color: #58708a; }
+.order-state { display: flex; gap: 8px; flex-wrap: wrap; }
+.status-pill { display: inline-flex; width: fit-content; padding: 7px 10px; border-radius: 999px; background: #e0f8ec; color: #0f6b3c; font-weight: 800; font-size: 12px; }
+.status-pill.logistics { background: #dfe9ff; color: #1d47a6; }
+.order-total { display: grid; gap: 4px; justify-items: end; }
 button { width: fit-content; border: 0; border-radius: 10px; padding: 10px 14px; background: linear-gradient(135deg,#0f4c81,#2563eb); color: #fff; font-weight: 800; cursor: pointer; }
 .modal-backdrop { position: fixed; inset: 0; background: rgba(18,48,74,.32); z-index: 30; }
 .order-detail { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; z-index: 31; padding: 24px; border-radius: 16px; background: #fff; box-shadow: 0 24px 70px rgba(18,48,74,.24); display: grid; gap: 12px; }
@@ -16,3 +31,9 @@ button { width: fit-content; border: 0; border-radius: 10px; padding: 10px 14px;
 .muted { color: #58708a; }
 .error { color: #b42318; }
 a { color: #0f4c81; text-decoration: none; font-weight: 800; }
+
+@media (max-width: 900px) {
+  .page { padding: 18px; }
+  .orders article { grid-template-columns: 72px minmax(0, 1fr); }
+  .order-state, .order-total, .orders article button { grid-column: 1 / -1; justify-items: start; }
+}

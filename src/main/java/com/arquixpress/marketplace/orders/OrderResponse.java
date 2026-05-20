@@ -3,6 +3,7 @@ package com.arquixpress.marketplace.orders;
 import com.arquixpress.marketplace.catalog.Product;
 import com.arquixpress.marketplace.identity.AppUser;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -15,6 +16,7 @@ public record OrderResponse(
         BigDecimal shippingCost,
         String shippingAddress,
         String shippingCity,
+        Instant createdAt,
         UUID logisticsCenterId,
         UUID logisticsOperatorId,
         UUID buyerId,
@@ -36,6 +38,7 @@ public record OrderResponse(
                 order.shippingCost(),
                 order.shippingAddress(),
                 order.shippingCity(),
+                order.createdAt(),
                 order.logisticsCenterId(),
                 order.logisticsOperatorId(),
                 order.buyerId(),

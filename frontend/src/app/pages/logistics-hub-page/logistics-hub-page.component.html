@@ -8,7 +8,7 @@
           autorizadas: Preparación → En ruta → Entregado.
         </p>
       </div>
-      <a routerLink="/">Volver al inicio</a>
+      <a *ngIf="!session.isLogisticsOnly()" routerLink="/">Volver al inicio</a>
     </div>
 
     <div
@@ -54,8 +54,8 @@
         <div class="empty-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M5 7h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
         </div>
-        <h3>Sin pedidos por procesar</h3>
-        <p>No hay pedidos pagados asignados a tu centro en este momento.</p>
+        <h3>{{ emptyTitle() }}</h3>
+        <p>{{ emptyMessage() }}</p>
         <button class="secondary" type="button" (click)="reload()">Recargar</button>
       </section>
 

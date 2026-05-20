@@ -2,14 +2,17 @@ package com.arquixpress.marketplace.catalog.application;
 
 import com.arquixpress.marketplace.catalog.ProductRepository;
 import com.arquixpress.marketplace.catalog.ProductCreateRequest;
+import com.arquixpress.marketplace.catalog.Product;
 import com.arquixpress.marketplace.catalog.ProductStatus;
 import com.arquixpress.marketplace.catalog.ProductSummary;
 import com.arquixpress.marketplace.identity.CurrentUser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.text.Normalizer;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,12 +54,15 @@ public class CatalogService {
         PageRequest pageable = PageRequest.of(page, Math.min(size, 200));
         if (readReplicaEnabled && catalogReadReplica != null) {
             try {
-                return searchReplica(normalizedQuery, normalizedCategory, pageable);
+                Page<ProductSummary> result = searchReplica(normalizedQuery, normalizedCategory, pageable);
+                return withAssistedFallback(result, normalizedQuery, normalizedCategory, pageable);
             } catch (DataAccessException ex) {
-                return searchPrimary(normalizedQuery, normalizedCategory, pageable);
+                Page<ProductSummary> result = searchPrimary(normalizedQuery, normalizedCategory, pageable);
+                return withAssistedFallback(result, normalizedQuery, normalizedCategory, pageable);
             }
         }
-        return searchPrimary(normalizedQuery, normalizedCategory, pageable);
+        Page<ProductSummary> result = searchPrimary(normalizedQuery, normalizedCategory, pageable);
+        return withAssistedFallback(result, normalizedQuery, normalizedCategory, pageable);
     }
 
     public ProductSummary detail(UUID id) {
@@ -114,6 +120,88 @@ public class CatalogService {
         return products.searchAll(pageable).map(ProductSummary::from);
     }
 
+    private Page<ProductSummary> withAssistedFallback(
+            Page<ProductSummary> result,
+            String normalizedQuery,
+            String normalizedCategory,
+            Pageable pageable
+    ) {
+        if (normalizedQuery == null || !result.isEmpty()) {
+            return result;
+        }
+        return searchAssisted(normalizedQuery, normalizedCategory, pageable);
+    }
+
+    private Page<ProductSummary> searchAssisted(String query, String category, Pageable pageable) {
+        Pageable candidatePage = PageRequest.of(0, 500);
+        List<ProductSummary> matches = (category == null
+                ? products.searchAll(candidatePage)
+                : products.searchByCategory(category, candidatePage))
+                .getContent()
+                .stream()
+                .filter(product -> assistedMatch(query, product))
+                .map(ProductSummary::from)
+                .toList();
+
+        int start = (int) Math.min(pageable.getOffset(), matches.size());
+        int end = Math.min(start + pageable.getPageSize(), matches.size());
+        return new PageImpl<>(matches.subList(start, end), pageable, matches.size());
+    }
+
+    private boolean assistedMatch(String query, Product product) {
+        List<String> queryTerms = terms(query);
+        if (queryTerms.isEmpty()) {
+            return true;
+        }
+        List<String> searchableTerms = terms(String.join(" ",
+                product.title(),
+                product.description(),
+                product.category()));
+        String searchableText = String.join(" ", searchableTerms);
+        return queryTerms.stream().allMatch(term ->
+                searchableText.contains(term)
+                        || searchableTerms.stream().anyMatch(candidate -> isCloseTerm(term, candidate)));
+    }
+
+    private boolean isCloseTerm(String queryTerm, String candidateTerm) {
+        if (queryTerm.length() < 4 || candidateTerm.length() < 4) {
+            return queryTerm.equals(candidateTerm);
+        }
+        int maxDistance = queryTerm.length() <= 5 ? 1 : 2;
+        return levenshteinDistance(queryTerm, candidateTerm) <= maxDistance;
+    }
+
+    private List<String> terms(String value) {
+        String normalized = Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT);
+        return List.of(normalized.split("[^a-z0-9]+"))
+                .stream()
+                .filter(term -> !term.isBlank())
+                .toList();
+    }
+
+    private int levenshteinDistance(String left, String right) {
+        int[] previous = new int[right.length() + 1];
+        int[] current = new int[right.length() + 1];
+        for (int index = 0; index <= right.length(); index++) {
+            previous[index] = index;
+        }
+        for (int leftIndex = 1; leftIndex <= left.length(); leftIndex++) {
+            current[0] = leftIndex;
+            for (int rightIndex = 1; rightIndex <= right.length(); rightIndex++) {
+                int cost = left.charAt(leftIndex - 1) == right.charAt(rightIndex - 1) ? 0 : 1;
+                current[rightIndex] = Math.min(
+                        Math.min(current[rightIndex - 1] + 1, previous[rightIndex] + 1),
+                        previous[rightIndex - 1] + cost);
+            }
+            int[] swap = previous;
+            previous = current;
+            current = swap;
+        }
+        return previous[right.length()];
+    }
+
     private ProductSummary detailPrimary(UUID id) {
         return products.findByIdAndStatus(id, ProductStatus.ACTIVE)
                 .map(ProductSummary::from)
@@ -148,6 +236,9 @@ public class CatalogService {
                 rs.getString("image_url"),
                 ProductSummary.parseImages(rs.getString("image_urls"), rs.getString("image_url")),
                 rs.getBigDecimal("price"),
+                null,
+                null,
+                null,
                 rs.getInt("stock_available")));
         return new PageImpl<>(rows, pageable, rows.size());
     }
@@ -168,6 +259,9 @@ public class CatalogService {
                 rs.getString("image_url"),
                 ProductSummary.parseImages(rs.getString("image_urls"), rs.getString("image_url")),
                 rs.getBigDecimal("price"),
+                null,
+                null,
+                null,
                 rs.getInt("stock_available")));
         if (rows.isEmpty()) {
             throw new IllegalArgumentException("Producto no encontrado");

@@ -20,6 +20,7 @@ describe('AppComponent', () => {
       isOperator: jasmine.createSpy('isOperator').and.returnValue(false),
       isSeller: jasmine.createSpy('isSeller').and.returnValue(false),
       canAccessOperations: jasmine.createSpy('canAccessOperations').and.returnValue(false),
+      isLogisticsOnly: jasmine.createSpy('isLogisticsOnly').and.returnValue(false),
     };
 
     await TestBed.configureTestingModule({

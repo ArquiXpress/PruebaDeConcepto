@@ -39,6 +39,51 @@
   <div *ngIf="success()" class="message success">{{ success() }}</div>
   <div *ngIf="questionError()" class="message error">{{ questionError() }}</div>
 
+  <section class="panel offers-panel">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow">Ofertas</p>
+        <h2>Solicitudes del administrador</h2>
+      </div>
+      <button type="button" class="ghost" (click)="loadOffers()">Actualizar</button>
+    </div>
+
+    <p *ngIf="offersLoading()" class="muted">Cargando solicitudes de oferta...</p>
+    <div class="empty compact" *ngIf="!offersLoading() && offers().length === 0">
+      <h3>No tienes solicitudes de oferta</h3>
+      <p class="muted">Cuando administracion proponga descuentos para tus productos, apareceran aqui.</p>
+    </div>
+
+    <article class="offer-card" *ngFor="let offer of offers()">
+      <div class="offer-head">
+        <div>
+          <span class="tag">{{ offer.status }}</span>
+          <h3>{{ offer.title }} · {{ offer.discountPercent }}%</h3>
+          <p>{{ offer.message }}</p>
+          <small>Vigencia: {{ offer.startsAt | date:'short' }} a {{ offer.endsAt | date:'short' }}</small>
+        </div>
+        <div class="offer-actions" *ngIf="offer.status === 'PENDING'">
+          <button type="button" class="ghost" (click)="decideOffer(offer, false)" [disabled]="decidingOfferId() === offer.id">
+            Rechazar
+          </button>
+          <button type="button" class="primary small" (click)="decideOffer(offer, true)" [disabled]="decidingOfferId() === offer.id">
+            Aceptar
+          </button>
+        </div>
+      </div>
+
+      <div class="offer-products">
+        <a class="offer-product" *ngFor="let product of offer.products" [routerLink]="['/vendedor/publicaciones', product.id]">
+          <img [src]="product.imageUrl" [alt]="product.title" />
+          <span>
+            <strong>{{ product.title }}</strong>
+            <small>{{ product.category }} · {{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}</small>
+          </span>
+        </a>
+      </div>
+    </article>
+  </section>
+
   <section class="panel questions-panel">
     <div class="section-title">
       <div>

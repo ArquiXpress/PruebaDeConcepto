@@ -44,6 +44,12 @@ public class OrderEntity {
     @Column(name = "shipping_city")
     private String shippingCity;
 
+    @Column(name = "coupon_code")
+    private String couponCode;
+
+    @Column(name = "discount_total", nullable = false, precision = 12, scale = 2)
+    private BigDecimal discountTotal = BigDecimal.ZERO;
+
     @Column(name = "logistics_center_id")
     private UUID logisticsCenterId;
 
@@ -115,6 +121,18 @@ public class OrderEntity {
         this.total = lines.stream()
                 .map(line -> line.unitPrice().multiply(BigDecimal.valueOf(line.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .subtract(this.discountTotal)
+                .add(this.shippingCost);
+        updatedAt = Instant.now();
+    }
+
+    public void applyCoupon(String couponCode, BigDecimal discountTotal) {
+        this.couponCode = couponCode;
+        this.discountTotal = discountTotal == null ? BigDecimal.ZERO : discountTotal.max(BigDecimal.ZERO);
+        this.total = lines.stream()
+                .map(line -> line.unitPrice().multiply(BigDecimal.valueOf(line.quantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .subtract(this.discountTotal)
                 .add(this.shippingCost);
         updatedAt = Instant.now();
     }
@@ -133,6 +151,8 @@ public class OrderEntity {
     public BigDecimal shippingCost() { return shippingCost; }
     public String shippingAddress() { return shippingAddress; }
     public String shippingCity() { return shippingCity; }
+    public String couponCode() { return couponCode; }
+    public BigDecimal discountTotal() { return discountTotal; }
     public UUID logisticsCenterId() { return logisticsCenterId; }
     public UUID logisticsOperatorId() { return logisticsOperatorId; }
     public Instant createdAt() { return createdAt; }

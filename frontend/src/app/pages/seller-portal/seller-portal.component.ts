@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Product, ProductStatus } from '../../models/product';
 import { ProductQuestion, ProductQuestionService } from '../../services/product-question.service';
+import { OfferRequestResponse, PromotionsService } from '../../services/promotions.service';
 import { SellerProductPayload, SellerProductService } from '../../services/seller-product.service';
 import { SessionService } from '../../services/session.service';
 
@@ -32,6 +33,9 @@ export class SellerPortalComponent implements OnInit {
   readonly error = signal('');
   readonly success = signal('');
   readonly questionError = signal('');
+  readonly offers = signal<OfferRequestResponse[]>([]);
+  readonly offersLoading = signal(false);
+  readonly decidingOfferId = signal<string | null>(null);
   readonly editingId = signal<string | null>(null);
   readonly questions = signal<ProductQuestion[]>([]);
   readonly answeringId = signal<string | null>(null);
@@ -79,12 +83,14 @@ export class SellerPortalComponent implements OnInit {
   constructor(
     private readonly sellerProducts: SellerProductService,
     private readonly productQuestions: ProductQuestionService,
+    private readonly promotions: PromotionsService,
     public readonly session: SessionService
   ) {}
 
   ngOnInit(): void {
     this.loadProducts();
     this.loadQuestions();
+    this.loadOffers();
   }
 
   loadProducts(): void {
@@ -115,6 +121,37 @@ export class SellerPortalComponent implements OnInit {
       error: () => {
         this.questionError.set('No se pudieron cargar las preguntas de tus productos.');
         this.questionsLoading.set(false);
+      },
+    });
+  }
+
+  loadOffers(): void {
+    this.offersLoading.set(true);
+    this.promotions.listSellerOffers().subscribe({
+      next: (offers) => {
+        this.offers.set(offers);
+        this.offersLoading.set(false);
+      },
+      error: () => {
+        this.offersLoading.set(false);
+      },
+    });
+  }
+
+  decideOffer(offer: OfferRequestResponse, accepted: boolean): void {
+    this.decidingOfferId.set(offer.id);
+    this.error.set('');
+    this.success.set('');
+    const request = accepted ? this.promotions.acceptOffer(offer.id) : this.promotions.rejectOffer(offer.id);
+    request.subscribe({
+      next: () => {
+        this.success.set(accepted ? 'Oferta aceptada.' : 'Oferta rechazada.');
+        this.decidingOfferId.set(null);
+        this.loadOffers();
+      },
+      error: () => {
+        this.error.set('No se pudo responder la solicitud de oferta.');
+        this.decidingOfferId.set(null);
       },
     });
   }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CatalogService, ProductPage } from '../../services/catalog.service';
 import { CartService } from '../../services/cart.service';
+import { CartUIService } from '../../services/cart-ui.service';
 import { FavoritesService } from '../../services/favorites.service';
 import { Product } from '../../models/product';
 
@@ -34,10 +35,12 @@ export class CatalogPageComponent implements OnInit {
   error = '';
   page = signal<ProductPage | null>(null);
   readonly categories = CATEGORIES;
+  offersMode = false;
 
   constructor(
     private readonly catalog: CatalogService,
     private readonly route: ActivatedRoute,
+    private readonly cartUI: CartUIService,
     public readonly cart: CartService,
     public readonly favorites: FavoritesService
   ) {}
@@ -46,6 +49,7 @@ export class CatalogPageComponent implements OnInit {
     this.route.queryParamMap.subscribe((params) => {
       this.query = params.get('query') ?? '';
       this.category = params.get('category') ?? '';
+      this.offersMode = params.get('oferta') === 'true';
       this.loadCatalog();
     });
   }
@@ -53,6 +57,19 @@ export class CatalogPageComponent implements OnInit {
   loadCatalog(): void {
     this.loading = true;
     this.error = '';
+    if (this.offersMode) {
+      this.catalog.offers().subscribe({
+        next: (products) => {
+          this.page.set({ content: products, totalElements: products.length, totalPages: 1, size: products.length, number: 0 });
+          this.loading = false;
+        },
+        error: () => {
+          this.error = 'No se pudieron cargar las ofertas.';
+          this.loading = false;
+        },
+      });
+      return;
+    }
     this.catalog.search(this.query, this.category, 0, 200).subscribe({
       next: (page) => {
         this.page.set(page);
@@ -67,6 +84,7 @@ export class CatalogPageComponent implements OnInit {
 
   addToCart(product: Product): void {
     this.cart.add(product.id);
+    this.cartUI.open();
   }
 
   toggleFavorite(product: Product): void {

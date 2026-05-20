@@ -24,9 +24,20 @@
         <small>{{ notification.createdAt | date:'short' }}</small>
       </div>
       <div class="actions">
+        <button type="button" class="ghost" (click)="openNotification(notification)">Ver mensaje</button>
         <a *ngIf="notification.actionUrl" [routerLink]="notification.actionUrl" (click)="markRead(notification)">Abrir</a>
         <button type="button" class="ghost" (click)="markRead(notification)" *ngIf="!notification.read">Leida</button>
       </div>
     </article>
+  </section>
+
+  <div class="modal-backdrop" *ngIf="selectedNotification()" (click)="closeNotification()"></div>
+  <section class="notification-detail" *ngIf="selectedNotification() as notification">
+    <button type="button" class="ghost close" (click)="closeNotification()">Cerrar</button>
+    <span class="type">{{ notification.type }}</span>
+    <h2>{{ notification.title }}</h2>
+    <p>{{ notification.body }}</p>
+    <small>{{ notification.createdAt | date:'medium' }}</small>
+    <a *ngIf="notification.actionUrl" [routerLink]="notification.actionUrl">Abrir accion</a>
   </section>
 </main>

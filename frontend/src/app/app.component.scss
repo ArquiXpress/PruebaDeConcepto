@@ -560,6 +560,35 @@
   color: #0f4c81;
 }
 
+.cart-quantity-control {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cart-quantity-control button,
+.cart-quantity-control input {
+  border: 1px solid rgba(18, 48, 74, 0.16);
+  border-radius: 8px;
+  height: 32px;
+}
+
+.cart-quantity-control button {
+  background: #ffffff;
+  cursor: pointer;
+  width: 32px;
+}
+
+.cart-quantity-control button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cart-quantity-control input {
+  text-align: center;
+  width: 52px;
+}
+
 .muted {
   color: #58708a;
   font-size: 14px;

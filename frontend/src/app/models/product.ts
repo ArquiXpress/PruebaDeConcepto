@@ -9,6 +9,9 @@ export interface Product {
   imageUrl: string;
   imageUrls?: string[];
   price: number;
+  discountPercent?: number | null;
+  salePrice?: number | null;
+  offerEndsAt?: string | null;
   stockAvailable: number;
   status?: ProductStatus;
   moderationReason?: string | null;

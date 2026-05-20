@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { SessionService } from '../../services/session.service';
+import { CITY_OPTIONS } from '../../shared/city-options';
 
 @Component({
   selector: 'app-profile-page',
@@ -13,6 +14,7 @@ import { SessionService } from '../../services/session.service';
   styleUrl: './profile-page.component.scss',
 })
 export class ProfilePageComponent implements OnInit {
+  readonly cityOptions = CITY_OPTIONS;
   displayName = '';
   email = '';
   avatarUrl = '';
@@ -39,7 +41,7 @@ export class ProfilePageComponent implements OnInit {
     this.avatarUrl = user.avatarUrl ?? '';
     this.phone = user.phone ?? '';
     this.address = user.address ?? '';
-    this.city = user.city ?? '';
+    this.city = this.normalizeCity(user.city ?? '');
     this.documentNumber = user.documentNumber ?? '';
   }
 
@@ -65,5 +67,22 @@ export class ProfilePageComponent implements OnInit {
         this.error = 'No se pudo actualizar el perfil.';
       },
     });
+  }
+
+  private normalizeCity(value: string): string {
+    const normalized = value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+    return this.cityOptions.find((city) => this.normalizedCityKey(city) === normalized) || value;
+  }
+
+  private normalizedCityKey(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
   }
 }

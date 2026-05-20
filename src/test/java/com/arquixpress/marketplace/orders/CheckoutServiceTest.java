@@ -17,10 +17,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.ArgumentCaptor;
 
 import com.arquixpress.marketplace.catalog.Product;
 import com.arquixpress.marketplace.catalog.ProductRepository;
+import com.arquixpress.marketplace.identity.AppUser;
 import com.arquixpress.marketplace.identity.AppUserRepository;
+import com.arquixpress.marketplace.identity.Role;
+import com.arquixpress.marketplace.logistics.LogisticsCenter;
 import com.arquixpress.marketplace.logistics.LogisticsCenterRepository;
 import com.arquixpress.marketplace.notifications.NotificationOutboxRepository;
 import com.arquixpress.marketplace.notifications.NotificationService;
@@ -29,6 +33,8 @@ import com.arquixpress.marketplace.payments.PaymentGatewayResult;
 import com.arquixpress.marketplace.payments.PaymentStatus;
 import com.arquixpress.marketplace.payments.PaymentTransaction;
 import com.arquixpress.marketplace.payments.PaymentTransactionRepository;
+import com.arquixpress.marketplace.promotions.CouponRedemptionRepository;
+import com.arquixpress.marketplace.promotions.MarketingCouponRepository;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -42,6 +48,8 @@ class CheckoutServiceTest {
     private NotificationService notifications;
     private LogisticsCenterRepository centers;
     private AppUserRepository users;
+    private MarketingCouponRepository coupons;
+    private CouponRedemptionRepository redemptions;
     private TransactionTemplate tx;
     private CheckoutService checkoutService;
 
@@ -56,6 +64,8 @@ class CheckoutServiceTest {
         notifications = mock(NotificationService.class);
         centers = mock(LogisticsCenterRepository.class);
         users = mock(AppUserRepository.class);
+        coupons = mock(MarketingCouponRepository.class);
+        redemptions = mock(CouponRedemptionRepository.class);
         tx = mock(TransactionTemplate.class);
 
         when(tx.execute(any(TransactionCallback.class))).thenAnswer(inv -> {
@@ -71,7 +81,7 @@ class CheckoutServiceTest {
         when(users.findById(any(UUID.class))).thenReturn(Optional.empty());
         when(users.findAllById(any())).thenReturn(List.of());
 
-        checkoutService = new CheckoutService(products, orders, payments, paymentGateway, outbox, notifications, centers, users, tx);
+        checkoutService = new CheckoutService(products, orders, payments, paymentGateway, outbox, notifications, centers, users, coupons, redemptions, tx);
     }
 
     @Test
@@ -171,6 +181,59 @@ class CheckoutServiceTest {
         assertEquals(orderId, result.orderId());
         assertEquals("Resultado idempotente; no se crea otro cobro ni otra orden", result.message());
         verify(paymentGateway, never()).charge(any(), any(), any());
+    }
+
+    @Test
+    void checkout_shouldNormalizeShippingCityAndAssignDestinationCenter() {
+        UUID buyerId = UUID.randomUUID();
+        UUID sellerId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        UUID bogotaCenterId = UUID.randomUUID();
+        String idempotencyKey = "key-city";
+
+        Product product = new Product(sellerId, "Producto Bogota", "Descripcion", "electronica", "http://img.png", BigDecimal.valueOf(50000), 10);
+        AppUser seller = AppUser.create(sellerId, "seller@test.com", "password", "Seller", java.util.Set.of(Role.SELLER));
+        seller.setAddress("Calle 1");
+        seller.setCity("Bogotá");
+
+        when(payments.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.empty());
+        when(centers.findAll()).thenReturn(List.of(
+                new LogisticsCenter(bogotaCenterId, "Bogota", "Centro Bogota"),
+                new LogisticsCenter(UUID.randomUUID(), "Medellin", "Centro Medellin")
+        ));
+        when(products.findById(any(UUID.class))).thenReturn(Optional.of(product));
+        when(products.reserveStock(any(UUID.class), eq(1))).thenReturn(1);
+        when(orders.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(payments.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(users.findAllById(any())).thenReturn(List.of(seller));
+        when(paymentGateway.charge(any(UUID.class), any(BigDecimal.class), eq(idempotencyKey)))
+                .thenReturn(PaymentGatewayResult.approved("REF-CITY"));
+        when(payments.findByIdempotencyKey(idempotencyKey))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(new PaymentTransaction(UUID.randomUUID(), UUID.randomUUID(), idempotencyKey, BigDecimal.valueOf(58000), "Pago simulado")));
+        when(orders.findWithLines(any(UUID.class))).thenAnswer(inv -> {
+            OrderEntity order = new OrderEntity(inv.getArgument(0), buyerId);
+            order.addLine(productId, 1, BigDecimal.valueOf(50000));
+            order.setShipping("Cra 1", "Bogota", BigDecimal.valueOf(8000));
+            order.assignCenter(bogotaCenterId, null);
+            order.markPaid();
+            return Optional.of(order);
+        });
+        when(products.findAllById(any())).thenReturn(List.of(product));
+
+        checkoutService.checkout(buyerId, new CheckoutRequest(
+                List.of(new CheckoutItemRequest(productId, 1)),
+                null,
+                "Cra 1",
+                "Bogotá"
+        ), idempotencyKey);
+
+        ArgumentCaptor<OrderEntity> orderCaptor = ArgumentCaptor.forClass(OrderEntity.class);
+        verify(orders).save(orderCaptor.capture());
+        OrderEntity savedOrder = orderCaptor.getValue();
+        assertEquals("Bogota", savedOrder.shippingCity());
+        assertEquals(BigDecimal.valueOf(8000), savedOrder.shippingCost());
+        assertEquals(bogotaCenterId, savedOrder.logisticsCenterId());
     }
 
     @Test

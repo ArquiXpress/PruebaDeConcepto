@@ -77,6 +77,10 @@ export class SessionService {
   }
 
   canAccessOperations(): boolean {
-    return this.hasRole('LOGISTICS') || this.hasRole('ADMIN') || this.hasRole('SUPERADMIN');
+    return this.hasRole('ADMIN') || this.hasRole('SUPERADMIN');
+  }
+
+  isLogisticsOnly(): boolean {
+    return this.hasRole('LOGISTICS') && !this.hasRole('ADMIN') && !this.hasRole('SUPERADMIN');
   }
 }

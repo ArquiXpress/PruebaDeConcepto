@@ -15,11 +15,21 @@ import com.arquixpress.marketplace.payments.PaymentGatewayResult;
 import com.arquixpress.marketplace.payments.PaymentStatus;
 import com.arquixpress.marketplace.payments.PaymentTransaction;
 import com.arquixpress.marketplace.payments.PaymentTransactionRepository;
+import com.arquixpress.marketplace.promotions.CouponRedemption;
+import com.arquixpress.marketplace.promotions.CouponRedemptionRepository;
+import com.arquixpress.marketplace.promotions.CouponTargetType;
+import com.arquixpress.marketplace.promotions.MarketingCoupon;
+import com.arquixpress.marketplace.promotions.MarketingCouponRepository;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.text.Normalizer;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -37,12 +47,14 @@ public class CheckoutService {
     private final NotificationService notifications;
     private final LogisticsCenterRepository centers;
     private final AppUserRepository users;
+    private final MarketingCouponRepository coupons;
+    private final CouponRedemptionRepository redemptions;
     private final TransactionTemplate tx;
 
     public CheckoutService(ProductRepository products, OrderRepository orders, PaymentTransactionRepository payments,
             PaymentGatewayClient paymentGateway, NotificationOutboxRepository outbox,
             NotificationService notifications, LogisticsCenterRepository centers, AppUserRepository users,
-            TransactionTemplate tx) {
+            MarketingCouponRepository coupons, CouponRedemptionRepository redemptions, TransactionTemplate tx) {
         this.products = products;
         this.orders = orders;
         this.payments = payments;
@@ -51,6 +63,8 @@ public class CheckoutService {
         this.notifications = notifications;
         this.centers = centers;
         this.users = users;
+        this.coupons = coupons;
+        this.redemptions = redemptions;
         this.tx = tx;
     }
 
@@ -111,10 +125,6 @@ public class CheckoutService {
 
     private PendingCheckout createPendingOrder(UUID buyerId, CheckoutRequest request, String idempotencyKey, String paymentMethod) {
         OrderEntity order = new OrderEntity(UUID.randomUUID(), buyerId);
-        UUID centerId = pickCenterId();
-        if (centerId != null) {
-            order.assignCenter(centerId, null);
-        }
         List<Product> orderProducts = new java.util.ArrayList<>();
         for (CheckoutItemRequest item : request.items()) {
             Product product = products.findById(item.productId())
@@ -135,7 +145,13 @@ public class CheckoutService {
         if (shippingAddress == null || shippingCity == null) {
             throw new CheckoutProblem("SHIPPING_ADDRESS_REQUIRED", "Selecciona o ingresa una direccion y ciudad de envio", HttpStatus.BAD_REQUEST);
         }
+        shippingCity = canonicalCity(shippingCity);
+        UUID centerId = pickCenterId(shippingCity);
+        if (centerId != null) {
+            order.assignCenter(centerId, null);
+        }
         order.setShipping(shippingAddress, shippingCity, calculateShippingCost(orderProducts, shippingCity));
+        AppliedCoupon appliedCoupon = applyCouponIfPresent(order, orderProducts, request.couponCode());
         orders.save(order);
         savePendingPayment(order.id(), idempotencyKey, order.total(), paymentMethod);
         return new PendingCheckout(order.id(), order.total());
@@ -162,6 +178,7 @@ public class CheckoutService {
         payment.apply(result);
         if (result.status() == PaymentStatus.APPROVED) {
             order.markPaid();
+            registerCouponRedemption(order);
             outbox.save(new NotificationOutbox("ORDER", order.id(), "ORDER_PAID", "{\"orderId\":\"" + order.id() + "\"}"));
             notifications.notify(order.buyerId(), "ORDER_PAID", "Compra confirmada",
                     "Tu compra fue aprobada y ya entro al proceso logistico.", "/mis-compras");
@@ -199,12 +216,89 @@ public class CheckoutService {
                 .orElseThrow(() -> new CheckoutProblem("ORDER_NOT_FOUND", "Pedido no encontrado", HttpStatus.NOT_FOUND));
     }
 
-    private UUID pickCenterId() {
+    private UUID pickCenterId(String shippingCity) {
         List<LogisticsCenter> all = centers.findAll();
         if (all.isEmpty()) {
             return null;
         }
+        String normalizedShippingCity = normalizeCity(shippingCity);
+        for (LogisticsCenter center : all) {
+            if (normalizeCity(center.city()).equals(normalizedShippingCity)) {
+                return center.id();
+            }
+        }
         return all.get(ThreadLocalRandom.current().nextInt(all.size())).id();
+    }
+
+    private AppliedCoupon applyCouponIfPresent(OrderEntity order, List<Product> orderProducts, String rawCode) {
+        if (rawCode == null || rawCode.isBlank()) {
+            return null;
+        }
+        String code = rawCode.trim().toUpperCase(Locale.ROOT);
+        MarketingCoupon coupon = coupons.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new CheckoutProblem("COUPON_NOT_FOUND", "Cupon no encontrado", HttpStatus.BAD_REQUEST));
+        if (redemptions.existsByCouponIdAndBuyerId(coupon.id(), order.buyerId())) {
+            throw new CheckoutProblem("COUPON_ALREADY_USED", "Este cupon ya fue usado por tu cuenta", HttpStatus.CONFLICT);
+        }
+        BigDecimal eligibleSubtotal = eligibleSubtotal(coupon, order, orderProducts);
+        if (eligibleSubtotal.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CheckoutProblem("COUPON_NOT_APPLICABLE", "El cupon no aplica a los productos de este checkout", HttpStatus.BAD_REQUEST);
+        }
+        BigDecimal discount = eligibleSubtotal
+                .multiply(BigDecimal.valueOf(coupon.discountPercent()))
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        order.applyCoupon(coupon.code(), discount);
+        return new AppliedCoupon(coupon.id(), discount);
+    }
+
+    private BigDecimal eligibleSubtotal(MarketingCoupon coupon, OrderEntity order, List<Product> orderProducts) {
+        Map<UUID, Product> productById = orderProducts.stream().collect(Collectors.toMap(Product::id, Function.identity()));
+        if (coupon.targetType() == CouponTargetType.HIGH_VALUE_BUYERS) {
+            BigDecimal minimum = parseMoney(coupon.targetValue(), new BigDecimal("1000000"));
+            BigDecimal subtotal = order.lines().stream()
+                    .map(line -> line.unitPrice().multiply(BigDecimal.valueOf(line.quantity())))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            return subtotal.compareTo(minimum) >= 0 ? subtotal : BigDecimal.ZERO;
+        }
+        return order.lines().stream()
+                .filter(line -> appliesToProduct(coupon, productById.get(line.productId())))
+                .map(line -> line.unitPrice().multiply(BigDecimal.valueOf(line.quantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private boolean appliesToProduct(MarketingCoupon coupon, Product product) {
+        if (product == null) {
+            return false;
+        }
+        if (coupon.targetType() == CouponTargetType.ALL_CLIENTS) {
+            return true;
+        }
+        if (coupon.targetType() == CouponTargetType.CATEGORY_BUYERS) {
+            return coupon.targetValue() != null && product.category().equalsIgnoreCase(coupon.targetValue());
+        }
+        return true;
+    }
+
+    private void registerCouponRedemption(OrderEntity order) {
+        if (order.couponCode() == null || order.couponCode().isBlank() || order.discountTotal().compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        MarketingCoupon coupon = coupons.findByCodeIgnoreCase(order.couponCode()).orElse(null);
+        if (coupon == null) {
+            return;
+        }
+        redemptions.save(new CouponRedemption(coupon.id(), order.buyerId(), order.id(), order.discountTotal()));
+    }
+
+    private BigDecimal parseMoney(String value, BigDecimal fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        try {
+            return new BigDecimal(value.trim());
+        } catch (NumberFormatException ex) {
+            return fallback;
+        }
     }
 
     private PaymentTransaction latestPaymentFor(UUID orderId) {
@@ -249,12 +343,37 @@ public class CheckoutService {
         }
         var sellerIds = orderProducts.stream().map(Product::sellerId).distinct().toList();
         java.math.BigDecimal totalShipping = java.math.BigDecimal.ZERO;
+        String normalizedShippingCity = normalizeCity(shippingCity);
         for (AppUser seller : users.findAllById(sellerIds)) {
-            boolean sameCity = seller.city() != null && shippingCity != null
-                    && seller.city().trim().equalsIgnoreCase(shippingCity.trim());
+            boolean sameCity = seller.city() != null && !normalizedShippingCity.isBlank()
+                    && normalizeCity(seller.city()).equals(normalizedShippingCity);
             totalShipping = totalShipping.add(sameCity ? java.math.BigDecimal.valueOf(8000) : java.math.BigDecimal.valueOf(18000));
         }
         return totalShipping;
+    }
+
+    private String canonicalCity(String value) {
+        String normalized = normalizeCity(value);
+        return switch (normalized) {
+            case "bogota" -> "Bogota";
+            case "medellin" -> "Medellin";
+            case "cali" -> "Cali";
+            case "barranquilla" -> "Barranquilla";
+            case "cartagena" -> "Cartagena";
+            case "bucaramanga" -> "Bucaramanga";
+            case "pereira" -> "Pereira";
+            case "manizales" -> "Manizales";
+            default -> value.trim();
+        };
+    }
+
+    private String normalizeCity(String value) {
+        if (value == null) {
+            return "";
+        }
+        return Normalizer.normalize(value.trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT);
     }
 
     private String firstText(String preferred, String fallback) {
@@ -281,4 +400,6 @@ public class CheckoutService {
         }
         return paymentMethod;
     }
+
+    private record AppliedCoupon(UUID couponId, BigDecimal discount) {}
 }

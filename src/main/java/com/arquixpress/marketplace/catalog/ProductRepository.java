@@ -65,6 +65,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     List<Product> findAllByOrderByCreatedAtDesc();
 
+    List<Product> findByCategoryIgnoreCase(String category);
+
     @Query("""
             select p from Product p
             where p.moderationReason is not null

@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { CITY_OPTIONS } from '../../shared/city-options';
 
 @Component({
   selector: 'app-register-page',
@@ -12,6 +13,7 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './register-page.component.scss',
 })
 export class RegisterPageComponent {
+  readonly cityOptions = CITY_OPTIONS;
   displayName = '';
   email = '';
   password = '';

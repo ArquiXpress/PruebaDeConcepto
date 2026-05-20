@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { catchError, forkJoin, of } from 'rxjs';
 import { CatalogService } from '../../services/catalog.service';
 import { FavoritesService } from '../../services/favorites.service';
 import { CartService } from '../../services/cart.service';
+import { CartUIService } from '../../services/cart-ui.service';
 import { Product } from '../../models/product';
 
 @Component({
@@ -15,17 +17,37 @@ import { Product } from '../../models/product';
 })
 export class FavoritesPageComponent implements OnInit {
   products = signal<Product[]>([]);
+  loading = false;
+  error = '';
 
   constructor(
     private readonly catalog: CatalogService,
+    private readonly cartUI: CartUIService,
     public readonly favorites: FavoritesService,
     public readonly cart: CartService
   ) {}
 
   ngOnInit(): void {
-    this.catalog.search('', '', 0, 100).subscribe((page) => {
-      const ids = new Set(this.favorites.productIds());
-      this.products.set(page.content.filter((product) => ids.has(product.id)));
+    this.loadFavorites();
+  }
+
+  loadFavorites(): void {
+    const ids = this.favorites.productIds();
+    this.error = '';
+    if (!ids.length) {
+      this.products.set([]);
+      return;
+    }
+    this.loading = true;
+    forkJoin(ids.map((id) => this.catalog.detail(id).pipe(catchError(() => of(null))))).subscribe({
+      next: (products) => {
+        this.products.set(products.filter((product): product is Product => product !== null));
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'No se pudieron cargar tus favoritos.';
+        this.loading = false;
+      },
     });
   }
 
@@ -33,6 +55,7 @@ export class FavoritesPageComponent implements OnInit {
     event.preventDefault();
     event.stopPropagation();
     this.cart.add(product.id);
+    this.cartUI.open();
   }
 
   toggleFavorite(product: Product, event: Event): void {

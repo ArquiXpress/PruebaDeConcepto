@@ -165,6 +165,30 @@ class CatalogServiceTest {
     }
 
     @Test
+    void search_shouldFindProductsWithAssistedTypoFallback() {
+        Product product = createProduct(
+                "Iphone XS Max",
+                "Celular en buen estado",
+                "Tecnologia",
+                new BigDecimal("700000"),
+                7
+        );
+
+        when(productRepository.searchByQuery(eq("%ipone%"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(productRepository.searchAll(argThat(pageable -> pageable.getPageSize() == 500)))
+                .thenReturn(new PageImpl<>(List.of(product)));
+
+        Page<ProductSummary> result = catalogService.search("Ipone", null, 0, 20);
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals("Iphone XS Max", result.getContent().get(0).title());
+
+        verify(productRepository).searchByQuery(eq("%ipone%"), any(Pageable.class));
+        verify(productRepository).searchAll(argThat(pageable -> pageable.getPageSize() == 500));
+    }
+
+    @Test
     void search_shouldLimitPageSizeToMaximum200() {
         when(productRepository.searchAll(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));

@@ -18,8 +18,17 @@
           <label>Direccion de envio</label>
           <input [(ngModel)]="shippingAddress" placeholder="Direccion, apartamento, referencias" maxlength="240" />
           <label>Ciudad de envio</label>
-          <input [(ngModel)]="shippingCity" placeholder="Ciudad" maxlength="120" />
+          <select [(ngModel)]="shippingCity">
+            <option value="">Selecciona una ciudad</option>
+            <option *ngFor="let city of cityOptions" [ngValue]="city">{{ city }}</option>
+          </select>
           <p class="helper">Usamos tu direccion de perfil como predeterminada. El costo final se calcula segun la ciudad del vendedor y la ciudad de entrega.</p>
+        </section>
+
+        <section class="payment-block">
+          <label>Cupon</label>
+          <input [(ngModel)]="couponCode" placeholder="Ingresa tu codigo de descuento" maxlength="80" />
+          <p class="helper">Cada cupon se puede usar una sola vez por cuenta. El descuento solo aplica a los productos que cumplan sus reglas.</p>
         </section>
 
         <div class="payment-block">
@@ -208,8 +217,13 @@
           <strong>{{ estimatedShipping() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
         </div>
 
+        <div class="summary-total" *ngIf="result()?.discountTotal">
+          <span>Descuento {{ result()?.couponCode }}</span>
+          <strong>-{{ result()?.discountTotal | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+
         <div class="summary-total">
-          <span>Total estimado</span>
+          <span>{{ result() ? 'Total pagado' : 'Total estimado' }}</span>
           <strong>{{ subtotal() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
         </div>
       </aside>
@@ -246,6 +260,10 @@
         <div class="result-card">
           <span>Envio</span>
           <strong>{{ checkoutResult.shippingCost | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+        <div class="result-card" *ngIf="checkoutResult.discountTotal">
+          <span>Descuento {{ checkoutResult.couponCode }}</span>
+          <strong>-{{ checkoutResult.discountTotal | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
         </div>
         <div class="result-card">
           <span>Destino</span>
