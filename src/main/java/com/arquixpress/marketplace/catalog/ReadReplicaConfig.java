@@ -24,6 +24,10 @@ public class ReadReplicaConfig {
             dataSource.setDriverClassName(driverClassName);
         }
         dataSource.setMaximumPoolSize(4);
+        dataSource.setReadOnly(true);
+        dataSource.setConnectionTimeout(2000);
+        dataSource.setValidationTimeout(1000);
+        dataSource.setInitializationFailTimeout(-1);
         dataSource.setPoolName("catalog-read-replica");
         return new NamedParameterJdbcTemplate(dataSource);
     }

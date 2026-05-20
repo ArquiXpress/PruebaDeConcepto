@@ -60,12 +60,20 @@ with seeded_offers as (
 insert into seller_offer_product (offer_request_id, product_id)
 select offer_id, product_id
 from (
-    select '91000000-0000-0000-0000-000000000001'::uuid as offer_id, id as product_id from product where category = 'tecnologia' order by created_at desc limit 8
+    select '91000000-0000-0000-0000-000000000001'::uuid as offer_id, product_id from (
+        select id as product_id from product where category = 'tecnologia' order by created_at desc limit 8
+    ) products
     union all
-    select '91000000-0000-0000-0000-000000000002'::uuid, id from product where category = 'gaming' order by created_at desc limit 6
+    select '91000000-0000-0000-0000-000000000002'::uuid, product_id from (
+        select id as product_id from product where category = 'gaming' order by created_at desc limit 6
+    ) products
     union all
-    select '91000000-0000-0000-0000-000000000003'::uuid, id from product where category = 'belleza' order by created_at desc limit 6
+    select '91000000-0000-0000-0000-000000000003'::uuid, product_id from (
+        select id as product_id from product where category = 'belleza' order by created_at desc limit 6
+    ) products
     union all
-    select '91000000-0000-0000-0000-000000000004'::uuid, id from product where category = 'auto' order by created_at desc limit 6
+    select '91000000-0000-0000-0000-000000000004'::uuid, product_id from (
+        select id as product_id from product where category = 'auto' order by created_at desc limit 6
+    ) products
 ) seeded_products
 on conflict do nothing;
