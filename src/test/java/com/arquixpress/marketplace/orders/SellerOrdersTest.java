@@ -84,11 +84,11 @@ class SellerOrdersTest {
     void sellerShouldReceiveNotificationWhenProductIsSold() {
         UUID buyerId = UUID.randomUUID();
         UUID sellerId = UUID.randomUUID();
-        UUID productId = UUID.randomUUID();
         String idempotencyKey = "key-seller-notify";
 
         Product product = new Product(sellerId, "Producto Vendedor", "Desc", "cat",
                 "http://img.png", BigDecimal.valueOf(60000), 8);
+        UUID productId = product.id();
 
         AppUser seller = AppUser.create(sellerId, "seller@mail.com", "pass", "Vendedor", Set.of(Role.SELLER));
         seller.setCity("Bogota");
@@ -128,14 +128,14 @@ class SellerOrdersTest {
         UUID buyerId = UUID.randomUUID();
         UUID sellerId1 = UUID.randomUUID();
         UUID sellerId2 = UUID.randomUUID();
-        UUID productId1 = UUID.randomUUID();
-        UUID productId2 = UUID.randomUUID();
         String idempotencyKey = "key-two-sellers";
 
         Product product1 = new Product(sellerId1, "Prod1", "Desc", "cat", "http://img.png",
                 BigDecimal.valueOf(20000), 5);
         Product product2 = new Product(sellerId2, "Prod2", "Desc", "cat", "http://img.png",
                 BigDecimal.valueOf(30000), 5);
+        UUID productId1 = product1.id();
+        UUID productId2 = product2.id();
 
         when(payments.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.empty());
         when(centers.findAll()).thenReturn(List.of());
