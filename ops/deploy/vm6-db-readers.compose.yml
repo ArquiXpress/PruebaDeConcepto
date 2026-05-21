@@ -1,0 +1,50 @@
+services:
+  pg-reader2:
+    image: postgres:16
+    container_name: pg-reader2
+    restart: unless-stopped
+    user: postgres
+    environment:
+      PRIMARY_HOST: 10.43.97.250
+      PRIMARY_PORT: "5432"
+      REPL_USER: ${REPL_USER}
+      REPL_PASSWORD: ${REPL_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-reader2-data:/var/lib/postgresql/data
+      - ./ops/deploy/postgres/standby-entrypoint.sh:/standby-entrypoint.sh:ro
+    command: ["sh", "/standby-entrypoint.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${APP_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  pg-reader3:
+    image: postgres:16
+    container_name: pg-reader3
+    restart: unless-stopped
+    user: postgres
+    environment:
+      PRIMARY_HOST: 10.43.97.250
+      PRIMARY_PORT: "5432"
+      REPL_USER: ${REPL_USER}
+      REPL_PASSWORD: ${REPL_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg-reader3-data:/var/lib/postgresql/data
+      - ./ops/deploy/postgres/standby-entrypoint.sh:/standby-entrypoint.sh:ro
+    command: ["sh", "/standby-entrypoint.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${APP_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  pg-reader2-data:
+  pg-reader3-data:

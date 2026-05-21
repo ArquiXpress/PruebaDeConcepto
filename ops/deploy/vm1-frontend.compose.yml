@@ -1,0 +1,18 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://10.43.100.124
+        REACT_APP_API_BASE_URL: http://10.43.100.124
+        API_BASE_URL: http://10.43.100.124
+    container_name: arquixpress-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:4200"
+    environment:
+      VITE_API_BASE_URL: http://10.43.100.124
+      REACT_APP_API_BASE_URL: http://10.43.100.124
+      API_BASE_URL: http://10.43.100.124
+    volumes:
+      - ./ops/deploy/frontend-proxy.conf.json:/app/proxy.conf.json:ro

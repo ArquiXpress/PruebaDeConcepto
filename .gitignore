@@ -3,6 +3,7 @@ target/
 .vscode/
 *.log
 .env
+ops/deploy/inventory.env
 .DS_Store
 analysis_*.txt
 

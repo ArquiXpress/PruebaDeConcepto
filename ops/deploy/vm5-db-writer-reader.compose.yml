@@ -1,0 +1,68 @@
+services:
+  pg-writer:
+    image: postgres:16
+    container_name: pg-writer
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_DB_NAME: ${APP_DB_NAME}
+      APP_DB_USER: ${APP_DB_USER}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+      REPL_USER: ${REPL_USER}
+      REPL_PASSWORD: ${REPL_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-writer-data:/var/lib/postgresql/data
+      - ./ops/deploy/postgres/init-primary.sh:/docker-entrypoint-initdb.d/init-primary.sh:ro
+    command:
+      - postgres
+      - -c
+      - listen_addresses=*
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+      - -c
+      - hot_standby=on
+      - -c
+      - wal_keep_size=512MB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${APP_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  pg-reader1:
+    image: postgres:16
+    container_name: pg-reader1
+    restart: unless-stopped
+    user: postgres
+    environment:
+      PRIMARY_HOST: pg-writer
+      PRIMARY_PORT: "5432"
+      REPL_USER: ${REPL_USER}
+      REPL_PASSWORD: ${REPL_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg-reader1-data:/var/lib/postgresql/data
+      - ./ops/deploy/postgres/standby-entrypoint.sh:/standby-entrypoint.sh:ro
+    depends_on:
+      pg-writer:
+        condition: service_healthy
+    command: ["sh", "/standby-entrypoint.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${APP_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  pg-writer-data:
+  pg-reader1-data:

@@ -1,0 +1,64 @@
+services:
+  nginx-api-lb:
+    image: nginx:1.27-alpine
+    container_name: nginx-api-lb
+    restart: unless-stopped
+    ports:
+      - "${API_LB_PORT:-80}:80"
+    volumes:
+      - ./ops/deploy/nginx-api-lb.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health | grep -q 'nginx-api-lb OK'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  db-read-lb:
+    image: haproxy:2.9-alpine
+    container_name: db-read-lb
+    restart: unless-stopped
+    ports:
+      - "${DB_READ_PORT:-15433}:15433"
+    volumes:
+      - ./ops/deploy/db-read-lb.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 15433"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  db-ha-controller:
+    build:
+      context: ./ops/deploy/db-ha-controller
+      dockerfile: Dockerfile
+    container_name: db-ha-controller
+    restart: unless-stopped
+    ports:
+      - "${DB_WRITE_PORT:-15432}:15432"
+    environment:
+      SSH_USER: ${SSH_USER}
+      SSH_KEY_PATH: /keys/id_ed25519
+      APP_DB_NAME: ${APP_DB_NAME}
+      APP_DB_USER: ${APP_DB_USER}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+      VM5_DB1_IP: ${VM5_DB1_IP}
+      VM6_DB2_IP: ${VM6_DB2_IP}
+      WRITER_HOST: 10.43.97.250
+      WRITER_PORT: "5432"
+      READER2_HOST: 10.43.101.72
+      READER2_PORT: "5432"
+      READER2_CONTAINER: pg-reader2
+      READER3_HOST: 10.43.101.72
+      READER3_PORT: "5433"
+      READER3_CONTAINER: pg-reader3
+    volumes:
+      - ${SSH_KEY}:/keys/id_ed25519:ro
+      - db-ha-state:/state
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 15432 -U ${APP_DB_USER} -d ${APP_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  db-ha-state:
