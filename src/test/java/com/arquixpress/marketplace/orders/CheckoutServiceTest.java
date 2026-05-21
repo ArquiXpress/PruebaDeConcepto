@@ -56,13 +56,20 @@ class CheckoutServiceTest {
         centers = mock(LogisticsCenterRepository.class);
         tx = mock(TransactionTemplate.class);
 
-        when(tx.execute(any(TransactionCallback.class))).thenAnswer(inv -> {
-            TransactionCallback<?> callback = inv.getArgument(0);
-            return callback.doInTransaction(null);
+        when(tx.execute(any())).thenAnswer(inv -> {
+            Object callback = inv.getArgument(0);
+            if (callback instanceof TransactionCallback) {
+                return ((TransactionCallback<?>) callback).doInTransaction(null);
+            }
+            return null;
         });
         doAnswer(inv -> {
-            TransactionCallback<?> callback = inv.getArgument(0);
-            callback.doInTransaction(null);
+            Object callback = inv.getArgument(0);
+            if (callback instanceof java.util.function.Consumer) {
+                ((java.util.function.Consumer<?>) callback).accept(null);
+            } else if (callback instanceof TransactionCallback) {
+                ((TransactionCallback<?>) callback).doInTransaction(null);
+            }
             return null;
         }).when(tx).executeWithoutResult(any());
 
@@ -219,5 +226,111 @@ class CheckoutServiceTest {
 
         CheckoutProblem ex = assertThrows(CheckoutProblem.class, () -> checkoutService.checkout(buyerId, request, idempotencyKey));
         assertEquals("INSUFFICIENT_STOCK", ex.code());
+    }
+
+    @Test
+    void retryPayment_shouldRetryRejectedOrderSuccessfully() {
+        UUID buyerId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        String idempotencyKey = "key-retry-001";
+
+        Product product = new Product(UUID.randomUUID(), "Producto", "Desc", "cat", "http://img.png", BigDecimal.valueOf(50000), 10);
+
+        OrderEntity rejectedOrder = new OrderEntity(orderId, buyerId);
+        rejectedOrder.addLine(productId, 1, BigDecimal.valueOf(50000));
+        rejectedOrder.markRejected();
+
+        PaymentTransaction firstPayment = new PaymentTransaction(UUID.randomUUID(), orderId, "first-key", BigDecimal.valueOf(50000), "Pago simulado");
+
+        when(payments.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.empty());
+        when(orders.findWithLines(orderId)).thenReturn(Optional.of(rejectedOrder));
+        when(products.reserveStock(productId, 1)).thenReturn(1);
+        when(payments.findFirstByOrderIdOrderByCreatedAtDesc(orderId)).thenReturn(Optional.of(firstPayment));
+        when(payments.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(paymentGateway.charge(orderId, BigDecimal.valueOf(50000), idempotencyKey))
+                .thenReturn(PaymentGatewayResult.approved("REF-RETRY"));
+        PaymentTransaction retryPayment = new PaymentTransaction(UUID.randomUUID(), orderId, idempotencyKey, BigDecimal.valueOf(50000), "Pago simulado");
+        when(payments.findByIdempotencyKey(idempotencyKey))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(retryPayment));
+        when(products.findAllById(any())).thenReturn(List.of(product));
+
+        CheckoutResponse result = checkoutService.retryPayment(orderId, idempotencyKey);
+
+        assertNotNull(result);
+        assertEquals(OrderStatus.PAID, result.orderStatus());
+        verify(products).reserveStock(any(UUID.class), eq(1));
+    }
+
+    @Test
+    void retryPayment_shouldThrowWhenOrderNotRetryable() {
+        UUID orderId = UUID.randomUUID();
+        UUID buyerId = UUID.randomUUID();
+        String idempotencyKey = "key-not-retryable";
+
+        OrderEntity paidOrder = new OrderEntity(orderId, buyerId);
+        paidOrder.markPaid();
+
+        when(payments.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.empty());
+        when(orders.findWithLines(orderId)).thenReturn(Optional.of(paidOrder));
+
+        CheckoutProblem ex = assertThrows(CheckoutProblem.class, () -> checkoutService.retryPayment(orderId, idempotencyKey));
+        assertEquals("ORDER_NOT_RETRYABLE", ex.code());
+    }
+
+    @Test
+    void retryPayment_shouldReturnCachedResponseWhenIdempotencyKeyExists() {
+        UUID orderId = UUID.randomUUID();
+        UUID buyerId = UUID.randomUUID();
+        String idempotencyKey = "key-cached-retry";
+
+        PaymentTransaction cachedPayment = new PaymentTransaction(UUID.randomUUID(), orderId, idempotencyKey, BigDecimal.valueOf(50000), "Pago simulado");
+        OrderEntity order = new OrderEntity(orderId, buyerId);
+        order.addLine(UUID.randomUUID(), 1, BigDecimal.valueOf(50000));
+        order.markPaid();
+
+        when(payments.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.of(cachedPayment));
+        when(orders.findWithLines(orderId)).thenReturn(Optional.of(order));
+        when(products.findAllById(any())).thenReturn(List.of());
+
+        CheckoutResponse result = checkoutService.retryPayment(orderId, idempotencyKey);
+
+        assertNotNull(result);
+        assertEquals("Resultado idempotente de reintento", result.message());
+    }
+
+    @Test
+    void getOrdersForBuyer_shouldReturnAllOrdersForBuyer() {
+        UUID buyerId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        OrderEntity order1 = new OrderEntity(UUID.randomUUID(), buyerId);
+        order1.addLine(productId, 2, BigDecimal.valueOf(30000));
+        order1.markPaid();
+
+        OrderEntity order2 = new OrderEntity(UUID.randomUUID(), buyerId);
+        order2.addLine(productId, 1, BigDecimal.valueOf(30000));
+        order2.markPaid();
+
+        when(orders.findByBuyerWithLines(buyerId)).thenReturn(List.of(order1, order2));
+        when(products.findAllById(any())).thenReturn(List.of(
+                new Product(UUID.randomUUID(), "Producto", "Desc", "cat", "http://img.png", BigDecimal.valueOf(30000), 10)
+        ));
+
+        List<OrderResponse> result = checkoutService.getOrdersForBuyer(buyerId);
+
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void getOrdersForBuyer_shouldReturnEmptyListWhenNoPurchases() {
+        UUID buyerId = UUID.randomUUID();
+
+        when(orders.findByBuyerWithLines(buyerId)).thenReturn(List.of());
+
+        List<OrderResponse> result = checkoutService.getOrdersForBuyer(buyerId);
+
+        assertEquals(0, result.size());
     }
 }
